@@ -37,6 +37,15 @@ Run the server:
 npm start
 ```
 
+## Testing
+
+Tests use Mocha, Chai 4, Sinon and Supertest. Run them with `npm test` from `backend/`. No database or running server is needed. See `backend/test/claim.test.js` for the example pattern.
+
+- Put the requirement ID in each test name, e.g. `FR-4a (409): rejects verify on Open`.
+- One test file per feature in `backend/test/` (e.g. `verify.test.js`).
+- Stub models with Sinon instead of hitting MongoDB, and call `sinon.restore()` in `afterEach`.
+- For HTTP-level tests, import `src/app.js` into Supertest (never `server.js`).
+
 ## Frontend Setup
 
 ```bash
