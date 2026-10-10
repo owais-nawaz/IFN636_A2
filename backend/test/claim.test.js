@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const Bug = require('../src/models/Bug');
 const { claimBug } = require('../src/controllers/bugController');
 
-describe('Claim ticket (BTS-3)', () => {
+describe('Claim ticket (FR-4a)', () => {
   let res;
 
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe('Claim ticket (BTS-3)', () => {
 
   afterEach(() => sinon.restore());
 
-  it('BTS-3: claims an Open ticket and sets it to In Progress', async () => {
+  it('FR-4a: claims an Open ticket and sets it to In Progress', async () => {
     const claimed = { ticketId: 101, assignee: 'dev_mike', status: 'In Progress' };
     const findStub = sinon.stub(Bug, 'findOneAndUpdate')
       .resolves({ ...claimed, toObject: () => claimed });
@@ -37,7 +37,7 @@ describe('Claim ticket (BTS-3)', () => {
     expect(body.bug).to.include({ id: 101, assignee: 'dev_mike', status: 'In Progress' });
   });
 
-  it('BTS-3 (404): returns 404 when the ticket does not exist', async () => {
+  it('FR-4a (404): returns 404 when the ticket does not exist', async () => {
     sinon.stub(Bug, 'findOneAndUpdate').resolves(null);
 
     const req = { params: { id: '999' }, authenticatedUser: { username: 'dev_mike' } };
