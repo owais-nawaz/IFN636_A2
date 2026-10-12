@@ -7,7 +7,7 @@ class EmailNotifier extends BaseNotifier {
   async send(recipients, event, message) {
     const users = await User.find({ username: { $in: recipients } }, 'username email');
     users.forEach(user => {
-      console.log(`[email] To: ${user.email} | Subject: BUG-${event.bug.ticketId} update | ${message}`);
+      console.log(`[email] To: ${user.email} | Subject: BUG-${event.bugId} update | ${message}`);
     });
   }
 }

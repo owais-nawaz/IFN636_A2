@@ -1,19 +1,30 @@
+const Bug = require('../models/Bug');
 const User = require('../models/User');
 
-// Event names must match the events BugService emits (BTS2-50).
+// Event contract agreed with BugService (BTS2-48): each event is
+// { type, bugId, actingUser, fieldChanged, oldValue, newValue, timestamp }
+// and is emitted only after the database change succeeded.
 const EVENT_TYPES = {
   CLAIMED:  'bug.claimed',
   RESOLVED: 'bug.resolved',
   REOPENED: 'bug.reopened',
+  CLOSED:   'bug.closed',
 };
 
 // Recipient rules (FR-2):
 //   claim   -> reporter
 //   resolve -> reporter + all QA Leads
 //   reopen  -> assigned developer
-async function getRecipients({ type, bug }) {
-  let recipients = [];
+//   close   -> nobody
+async function getRecipients({ type, bugId }) {
+  const notifiable = [EVENT_TYPES.CLAIMED, EVENT_TYPES.RESOLVED, EVENT_TYPES.REOPENED];
+  if (!notifiable.includes(type)) return [];
 
+  // Events carry only bugId, so look up who reported and owns the bug.
+  const bug = await Bug.findOne({ ticketId: bugId }, 'reporter assignee');
+  if (!bug) return [];
+
+  let recipients = [];
   if (type === EVENT_TYPES.CLAIMED) {
     recipients = [bug.reporter];
   } else if (type === EVENT_TYPES.RESOLVED) {
@@ -26,11 +37,11 @@ async function getRecipients({ type, bug }) {
   return [...new Set(recipients)].filter(r => r && r !== 'Unassigned');
 }
 
-function buildMessage({ type, bug }) {
-  const ticket = `BUG-${bug.ticketId}`;
-  if (type === EVENT_TYPES.CLAIMED)  return `${ticket} was claimed by ${bug.assignee}.`;
-  if (type === EVENT_TYPES.RESOLVED) return `${ticket} was resolved by ${bug.assignee} and is ready for QA.`;
-  if (type === EVENT_TYPES.REOPENED) return `${ticket} was re-opened by QA.`;
+function buildMessage({ type, bugId, actingUser }) {
+  const ticket = `BUG-${bugId}`;
+  if (type === EVENT_TYPES.CLAIMED)  return `${ticket} was claimed by ${actingUser}.`;
+  if (type === EVENT_TYPES.RESOLVED) return `${ticket} was resolved by ${actingUser} and is ready for QA.`;
+  if (type === EVENT_TYPES.REOPENED) return `${ticket} was re-opened by ${actingUser}.`;
   return `${ticket} was updated.`;
 }
 

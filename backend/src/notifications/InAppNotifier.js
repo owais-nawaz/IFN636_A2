@@ -6,7 +6,7 @@ class InAppNotifier extends BaseNotifier {
   async send(recipients, event, message) {
     await Notification.insertMany(recipients.map(recipient => ({
       recipient,
-      bugId: event.bug.ticketId,
+      bugId: event.bugId,
       eventType: event.type,
       message,
     })));
