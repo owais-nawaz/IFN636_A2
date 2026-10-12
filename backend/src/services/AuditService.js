@@ -209,7 +209,7 @@ class AuditService {
    * @param {Object} options - Pagination and sorting options
    * @returns {Promise<Array>} Array of audit log entries
    */
-  static async getLogsForBug(bugId, { limit = 50, sort = -1 } = {}) {
+  static async getLogsForBug(bugId, { limit, sort = -1 } = {}) {
     const parsedId = Number(bugId);
     if (!parsedId || isNaN(parsedId)) {
       throw new Error('Valid bugId is required.');
@@ -217,10 +217,11 @@ class AuditService {
 
     const sortOrder = sort === 'asc' || sort === 1 ? 1 : -1;
 
-    return AuditLog.find({ bugId: parsedId })
-      .sort({ timestamp: sortOrder })
-      .limit(limit)
-      .lean();
+    let query = AuditLog.find({ bugId: parsedId }).sort({ timestamp: sortOrder });
+    if (limit) {
+      query = query.limit(limit);
+    }
+    return query.lean();
   }
 }
 

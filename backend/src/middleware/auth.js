@@ -11,7 +11,7 @@ function requireRole(allowedRoles) {
     const token = authHeader.split(' ')[1];
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET || JWT_SECRET);
     } catch (err) {
       return res.status(401).json({ success: false, errors: ['Invalid or expired session — please log in again.'] });
     }

@@ -1,4 +1,5 @@
 const Bug = require('../models/Bug');
+const AuditService = require('../services/AuditService');
 
 async function createBug(req, res) {
   const { title, module, severity, priority, description } = req.body;
@@ -108,4 +109,20 @@ async function verifyBug(req, res) {
     bug: { ...updated.toObject(), id: updated.ticketId } });
 }
 
-module.exports = { createBug, getBugs, claimBug, resolveBug, verifyBug };
+async function getBugHistory(req, res) {
+  const bugId = parseInt(req.params.id, 10);
+  if (isNaN(bugId)) return res.status(404).json({ success: false, errors: ['Ticket not found.'] });
+
+  const bug = await Bug.findOne({ ticketId: bugId });
+  if (!bug) return res.status(404).json({ success: false, errors: ['Ticket not found.'] });
+
+  const logs = await AuditService.getLogsForBug(bugId, { sort: 'asc' });
+  const history = logs.map(entry => ({
+    ...entry,
+    id: entry.id || (entry._id ? entry._id.toString() : undefined),
+  }));
+
+  res.json({ success: true, count: history.length, history });
+}
+
+module.exports = { createBug, getBugs, claimBug, resolveBug, verifyBug, getBugHistory };
