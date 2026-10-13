@@ -9,6 +9,15 @@ const STATUS_BY_CODE = {
   INVALID_TRANSITION: 409,
 };
 
+// Turns a service error into an HTTP response; anything else is rethrown.
+function sendServiceError(res, err) {
+  if (err instanceof BugServiceError) {
+    const status = STATUS_BY_CODE[err.code] || 500;
+    return res.status(status).json({ success: false, errors: [err.message] });
+  }
+  throw err;
+}
+
 async function createBug(req, res) {
   const { title, module, severity, priority, description } = req.body;
   const reporter = req.authenticatedUser.username;
@@ -81,11 +90,7 @@ async function claimBug(req, res) {
       bug: { ...updated.toObject(), id: updated.ticketId }
     });
   } catch (err) {
-    if (err instanceof BugServiceError) {
-      const status = STATUS_BY_CODE[err.code] || 500;
-      return res.status(status).json({ success: false, errors: [err.message] });
-    }
-    throw err;
+    sendServiceError(res, err);
   }
 }
 
@@ -94,39 +99,31 @@ async function resolveBug(req, res) {
   const { resolutionType, resolutionNotes } = req.body;
   const developer = req.authenticatedUser.username;
 
-  if (!resolutionNotes || resolutionNotes.trim().length < 10)
-    return res.status(400).json({ success: false, errors: ['Resolution notes must be at least 10 characters.'] });
-
-  const updated = await Bug.findOneAndUpdate(
-    { ticketId: bugId },
-    { status: 'Resolved', resolutionType, resolutionNotes: resolutionNotes.trim(), assignee: developer },
-    { new: true }
-  );
-  if (!updated) return res.status(404).json({ success: false, errors: ['Ticket not found.'] });
-  res.json({
-    success: true, message: `BUG-${bugId} resolved by ${developer}.`,
-    bug: { ...updated.toObject(), id: updated.ticketId }
-  });
+  try {
+    const updated = await bugService.resolve(bugId, developer, resolutionType, resolutionNotes);
+    res.json({
+      success: true, message: `BUG-${bugId} resolved by ${developer}.`,
+      bug: { ...updated.toObject(), id: updated.ticketId }
+    });
+  } catch (err) {
+    sendServiceError(res, err);
+  }
 }
 
 async function verifyBug(req, res) {
   const bugId = parseInt(req.params.id, 10);
   const { action, qaNotes } = req.body;
+  const qaUser = req.authenticatedUser.username;
 
-  if (action === 'reopen' && (!qaNotes || qaNotes.trim().length < 5))
-    return res.status(400).json({ success: false, errors: ['Regression notes are required to re-open (min. 5 chars).'] });
-
-  const newStatus = action === 'close' ? 'Closed' : 'Re-opened';
-  const updated = await Bug.findOneAndUpdate(
-    { ticketId: bugId },
-    { status: newStatus, qaNotes: qaNotes ? qaNotes.trim() : null },
-    { new: true }
-  );
-  if (!updated) return res.status(404).json({ success: false, errors: ['Ticket not found.'] });
-  res.json({
-    success: true, message: `BUG-${bugId} → ${newStatus}.`,
-    bug: { ...updated.toObject(), id: updated.ticketId }
-  });
+  try {
+    const updated = await bugService.verify(bugId, qaUser, action, qaNotes);
+    res.json({
+      success: true, message: `BUG-${bugId} → ${updated.status}.`,
+      bug: { ...updated.toObject(), id: updated.ticketId }
+    });
+  } catch (err) {
+    sendServiceError(res, err);
+  }
 }
 
 module.exports = { createBug, getBugs, claimBug, resolveBug, verifyBug };
