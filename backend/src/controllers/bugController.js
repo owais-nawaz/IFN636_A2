@@ -2,6 +2,13 @@ const Bug = require('../models/Bug');
 const bugService = require('../services/bugService');
 const { BugServiceError } = bugService;
 
+// Maps service error codes to HTTP status codes.
+const STATUS_BY_CODE = {
+  VALIDATION: 400,
+  NOT_FOUND: 404,
+  INVALID_TRANSITION: 409,
+};
+
 async function createBug(req, res) {
   const { title, module, severity, priority, description } = req.body;
   const reporter = req.authenticatedUser.username;
@@ -75,7 +82,7 @@ async function claimBug(req, res) {
     });
   } catch (err) {
     if (err instanceof BugServiceError) {
-      const status = err.code === 'NOT_FOUND' ? 404 : 409;
+      const status = STATUS_BY_CODE[err.code] || 500;
       return res.status(status).json({ success: false, errors: [err.message] });
     }
     throw err;
