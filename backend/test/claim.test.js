@@ -30,7 +30,7 @@ describe('Claim ticket (FR-4a)', () => {
     await claimBug(req, res);
 
     expect(updateStub.calledOnceWith(
-      { ticketId: 101, status: { $in: ['Open', 'Re-opened'] } },
+      { ticketId: 101, status: 'Open' },
       { assignee: 'dev_mike', status: 'In Progress' },
       { new: true }
     )).to.be.true;

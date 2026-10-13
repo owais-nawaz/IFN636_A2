@@ -1,16 +1,6 @@
 const Bug = require('../models/Bug');
-
-// Carries a code so the controller can pick the HTTP status.
-// The service itself knows nothing about HTTP.
-class BugServiceError extends Error {
-    constructor(code, message) {
-        super(message);
-        this.name = 'BugServiceError';
-        this.code = code;
-    }
-}
-
-const CLAIMABLE_STATUSES = ['Open', 'Re-opened'];
+const BugServiceError = require('./BugServiceError');
+const { stateFor } = require('./bugStates');
 
 async function claim(bugId, username) {
     const bug = await Bug.findOne({ ticketId: bugId });
@@ -18,22 +8,21 @@ async function claim(bugId, username) {
         throw new BugServiceError('NOT_FOUND', 'Ticket not found.');
     }
 
-    if (!CLAIMABLE_STATUSES.includes(bug.status)) {
-        throw new BugServiceError(
-            'INVALID_TRANSITION',
-            `Cannot claim a bug that is ${bug.status}.`
-        );
-    }
+    // The state object decides if claim is allowed (throws 409 if not).
+    const nextStatus = stateFor(bug.status).claim();
 
-    // The status is checked again inside the update, so if another request
-    // (or the second server) claimed it a moment ago, nothing is overwritten.
+    // The filter includes the status we just read, so if another request
+    // (or the second server) changed the bug in between, nothing is overwritten.
     const updated = await Bug.findOneAndUpdate(
-        { ticketId: bugId, status: { $in: CLAIMABLE_STATUSES } },
-        { assignee: username, status: 'In Progress' },
+        { ticketId: bugId, status: bug.status },
+        { assignee: username, status: nextStatus },
         { new: true }
     );
     if (!updated) {
-        throw new BugServiceError('INVALID_TRANSITION', 'Bug was changed by someone else. Refresh and try again.');
+        throw new BugServiceError(
+            'INVALID_TRANSITION',
+            'Bug was changed by someone else. Refresh and try again.'
+        );
     }
 
     return updated;
