@@ -1,8 +1,8 @@
-const TABS = { dashboard: 'Bug Repository', submit: '+ Report Bug', mywork: 'Developer Workspace', qa: 'QA Verification' };
+const TABS = { dashboard: 'Bug Repository', submit: '+ Report Bug', mywork: 'Developer Workspace', qa: 'QA Verification', reports: 'Reports' };
 const ROLE_TABS = {
   Tester:    ['dashboard', 'submit'],
   Developer: ['dashboard', 'mywork'],
-  QALead:    ['dashboard', 'submit', 'qa'],
+  QALead:    ['dashboard', 'submit', 'qa', 'reports'],
 };
 
 export default function SubNav({ user, activeTab, onTabChange }) {

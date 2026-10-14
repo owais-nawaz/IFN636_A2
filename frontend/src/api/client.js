@@ -53,3 +53,11 @@ export const bugsApi = {
     method: 'POST', headers: authHeaders(user), body: JSON.stringify(data)
   }).then(parseRes),
 };
+
+export const reportsApi = {
+  exportBugs: async (format, user) => {
+    const res = await fetch(`${BASE}/reports/export?format=${format}`, { headers: authHeaders(user) });
+    if (!res.ok) { await parseRes(res); throw new Error('Export failed.'); } // parseRes throws the server's message
+    return res.blob();
+  },
+};
