@@ -1,0 +1,408 @@
+{
+  "info": {
+    "_postman_id": "b2a7c1d4-5e8f-4a36-b9c0-2d4f6a8e1c33",
+    "name": "Bug Tracker - Report Export (BTS2-10)",
+    "description": "Tests for GET /api/reports/export (FR-3). Run the Auth folder first: it saves the JWTs into the qaToken, devToken and testerToken environment variables. Requires the backend on {{baseUrl}} with the seeded demo users.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Auth: log in as qa_lead",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('response has a token, saved to qaToken', function () {",
+                  "  const token = pm.response.json().token;",
+                  "  pm.expect(token).to.be.a('string').and.not.empty;",
+                  "  pm.environment.set('qaToken', token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"qa_lead\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Auth: log in as dev_alex",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('response has a token, saved to devToken', function () {",
+                  "  const token = pm.response.json().token;",
+                  "  pm.expect(token).to.be.a('string').and.not.empty;",
+                  "  pm.environment.set('devToken', token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"dev_alex\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Auth: log in as tester_sarah",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('response has a token, saved to testerToken', function () {",
+                  "  const token = pm.response.json().token;",
+                  "  pm.expect(token).to.be.a('string').and.not.empty;",
+                  "  pm.environment.set('testerToken', token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tester_sarah\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "item": [
+        {
+          "name": "FR-3 AC2: QA Lead exports CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const HEADER = 'ticketId,title,module,severity,priority,status,reporter,assignee,'",
+                  "  + 'resolutionType,resolutionNotes,qaNotes,createdAt,updatedAt,resolvedAt';",
+                  "",
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type contains text/csv', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv');",
+                  "});",
+                  "",
+                  "pm.test('Content-Disposition is an attachment with a filename', function () {",
+                  "  const disposition = pm.response.headers.get('Content-Disposition');",
+                  "  pm.expect(disposition).to.include('attachment');",
+                  "  pm.expect(disposition).to.match(/filename=\"bugs-report-\\d{4}-\\d{2}-\\d{2}\\.csv\"/);",
+                  "});",
+                  "",
+                  "pm.test('first line is the header row', function () {",
+                  "  pm.expect(pm.response.text().split(/\\r?\\n/)[0]).to.equal(HEADER);",
+                  "});",
+                  "",
+                  "pm.test('body has no _id', function () {",
+                  "  pm.expect(pm.response.text()).to.not.include('_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{qaToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export"],
+              "query": [{ "key": "format", "value": "csv" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC3: QA Lead exports JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type is JSON', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('Content-Disposition is an attachment with a .json filename', function () {",
+                  "  const disposition = pm.response.headers.get('Content-Disposition');",
+                  "  pm.expect(disposition).to.include('attachment');",
+                  "  pm.expect(disposition).to.match(/filename=\"bugs-report-\\d{4}-\\d{2}-\\d{2}\\.json\"/);",
+                  "});",
+                  "",
+                  "pm.test('body parses to an array', function () {",
+                  "  pm.expect(JSON.parse(pm.response.text())).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{qaToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export?format=json",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export"],
+              "query": [{ "key": "format", "value": "json" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC6 (401): no token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('success is false', function () {",
+                  "  pm.expect(pm.response.json().success).to.equal(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export"],
+              "query": [{ "key": "format", "value": "csv" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC6 (403): Developer token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('success is false', function () {",
+                  "  pm.expect(pm.response.json().success).to.equal(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{devToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export"],
+              "query": [{ "key": "format", "value": "csv" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC6 (403): Tester token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('success is false', function () {",
+                  "  pm.expect(pm.response.json().success).to.equal(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{testerToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export"],
+              "query": [{ "key": "format", "value": "csv" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC4 (400): unsupported format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('success is false', function () {",
+                  "  pm.expect(pm.response.json().success).to.equal(false);",
+                  "});",
+                  "",
+                  "pm.test('error message lists the supported formats', function () {",
+                  "  const message = pm.response.json().errors[0];",
+                  "  pm.expect(message).to.include('xml');",
+                  "  pm.expect(message).to.include('csv');",
+                  "  pm.expect(message).to.include('json');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{qaToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export?format=xml",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export"],
+              "query": [{ "key": "format", "value": "xml" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC4 (400): missing format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('success is false and the message says the format is required', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.equal(false);",
+                  "  pm.expect(body.errors[0]).to.include('format is required');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{qaToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
