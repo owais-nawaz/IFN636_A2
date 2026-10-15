@@ -73,6 +73,7 @@ Use the **Quick Demo Login** buttons on the sign-in screen, or register a new ac
 - Passwords are hashed with **bcrypt** (10 salt rounds) before storage.
 - Role authorization is enforced server-side via a `requireRole` middleware that verifies a **signed JWT** — client-supplied headers cannot forge a role.
 - Tokens expire after 2 hours.
+- Write requests (POST, PATCH, PUT) under `/api` are limited to **60 per minute per client IP**; the 61st returns `429 Too many requests`. Reads are not limited. Counts are kept per server instance, so with two EC2 instances behind the ALB the effective limit is about 120 per minute.
 
 ## Author
 
