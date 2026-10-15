@@ -1,6 +1,8 @@
+import NotificationBell from './NotificationBell';
+
 const ROLE_LABEL = { Tester: 'QA Tester', Developer: 'Developer', QALead: 'QA Lead' };
 
-export default function Navbar({ user, onLogout }) {
+export default function Navbar({ user, onLogout, refreshTrigger }) {
   return (
     <nav className="bts-navbar">
       <span className="bts-navbar__brand">
@@ -8,6 +10,7 @@ export default function Navbar({ user, onLogout }) {
         Bug Tracker Portal
       </span>
       <div className="bts-navbar__user">
+        <NotificationBell user={user} refreshTrigger={refreshTrigger} />
         <span className="bts-navbar__role" style={{ fontSize: 13 }}>
           {user?.username} · {ROLE_LABEL[user?.role]}
         </span>
