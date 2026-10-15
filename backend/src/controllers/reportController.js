@@ -1,6 +1,7 @@
 const Bug = require('../models/Bug');
 const ExportContext = require('../exporters/ExportContext');
 const { UnsupportedFormatError } = ExportContext;
+const { summarise } = require('../services/reportSummaryService');
 
 async function exportReport(req, res) {
   try {
@@ -26,4 +27,14 @@ async function exportReport(req, res) {
   }
 }
 
-module.exports = { exportReport };
+async function getSummary(req, res) {
+  try {
+    const bugs = await Bug.find().lean();
+    res.json({ success: true, summary: summarise(bugs) });
+  } catch (err) {
+    console.error('Summary error:', err.message);
+    res.status(500).json({ success: false, errors: ['Server error — could not generate summary.'] });
+  }
+}
+
+module.exports = { exportReport, getSummary };
