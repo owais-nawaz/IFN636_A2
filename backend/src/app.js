@@ -1,8 +1,9 @@
 const express = require('express');
 const cors    = require('cors');
 
-const authRoutes = require('./routes/authRoutes');
-const bugRoutes  = require('./routes/bugRoutes');
+const authRoutes         = require('./routes/authRoutes');
+const bugRoutes          = require('./routes/bugRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -15,5 +16,6 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/bugs', bugRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 module.exports = app;

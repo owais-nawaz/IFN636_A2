@@ -9,6 +9,7 @@ class InAppNotifier extends BaseNotifier {
       bugId: event.bugId,
       eventType: event.type,
       message,
+      timestamp: event.timestamp, // same time as the event and the audit entry
     })));
   }
 }
