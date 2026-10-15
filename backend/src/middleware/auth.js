@@ -1,6 +1,4 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET;
-
 // Role authorization middleware — verifies a signed JWT, rejects forged/missing roles
 function requireRole(allowedRoles) {
   return (req, res, next) => {
@@ -11,7 +9,7 @@ function requireRole(allowedRoles) {
     const token = authHeader.split(' ')[1];
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
       return res.status(401).json({ success: false, errors: ['Invalid or expired session — please log in again.'] });
     }
