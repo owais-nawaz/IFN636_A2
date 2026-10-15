@@ -41,6 +41,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .badge-medium   { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 .badge-high     { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
 .badge-critical { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.badge-sla      { background: #b91c1c; color: #FFFFFF; border: 1px solid #991b1b; }
 
 /* Forms */
 .bts-form { background: var(--bts-surface); border: 1px solid var(--bts-border); border-radius: var(--bts-radius); padding: 24px; max-width: 600px; margin: 0 auto; }
