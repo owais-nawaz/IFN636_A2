@@ -2,19 +2,27 @@ import { useState, useEffect, useCallback } from 'react';
 import { bugsApi } from '../../api/client';
 import BugFilters from '../bugs/BugFilters';
 import StatusBadge from '../shared/StatusBadge';
+import SlaBadge from '../shared/SlaBadge';
+import { canDo } from '../shared/bugActions';
 import ReopenModal from './ReopenModal';
 
 const DEFAULT = { status: 'All', priority: 'All', search: '' };
 
 function QACard({ bug, onVerifyClose, onReopenRequest }) {
   const id = bug.ticketId || bug.id;
-  const canAct = bug.status === 'Resolved';
+  // Buttons are enabled only for the moves the bug's current status allows.
+  const canClose = canDo(bug.status, 'close');
+  const canReopen = canDo(bug.status, 'reopen');
+  const blocked = `Only Resolved bugs can be verified (this one is ${bug.status})`;
 
   return (
     <div className="bug-card">
       <div className="bug-card__header">
         <span className="bug-card__id">BUG-{id}</span>
-        <StatusBadge text={bug.status} type="status" />
+        <div className="bug-card__badges">
+          <SlaBadge bug={bug} />
+          <StatusBadge text={bug.status} type="status" />
+        </div>
       </div>
 
       <div className="bug-card__title">{bug.title}</div>
@@ -23,6 +31,8 @@ function QACard({ bug, onVerifyClose, onReopenRequest }) {
         <span>Module: <strong>{bug.module}</strong></span>
         <span>·</span>
         <span>Severity: <strong>{bug.severity}</strong></span>
+        <span>·</span>
+        <span>Priority: <StatusBadge text={bug.priority} type="level" /></span>
       </div>
 
       <p className="bug-card__desc">{bug.description}</p>
@@ -45,12 +55,14 @@ function QACard({ bug, onVerifyClose, onReopenRequest }) {
         <span>Dev: <strong>{bug.assignee || 'Unassigned'}</strong></span>
       </div>
 
-      {canAct && (
+      {bug.status !== 'Closed' && (
         <div className="bug-card__actions bug-card__actions--split">
-          <button className="btn btn-verify" onClick={() => onVerifyClose(bug)}>
+          <button className="btn btn-verify" disabled={!canClose} title={canClose ? '' : blocked}
+            onClick={() => onVerifyClose(bug)}>
             <span className="material-icons btn-icon">fact_check</span> Verify fix and Audit
           </button>
-          <button className="btn btn-reopen" onClick={() => onReopenRequest(bug)}>
+          <button className="btn btn-reopen" disabled={!canReopen} title={canReopen ? '' : blocked}
+            onClick={() => onReopenRequest(bug)}>
             <span className="material-icons btn-icon">replay</span> Re-open
           </button>
         </div>
