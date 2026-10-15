@@ -1,5 +1,5 @@
-// Notifications (FR-2): Observer subject, notifiers, recipient rules, and the
-// events BugService emits (contract on BTS2-48).
+// Notifications (FR-2): Observer subject, notifiers, recipient rules, the
+// events BugService emits (contract on BTS2-48), and the notifications API.
 const { expect } = require('chai');
 const sinon = require('sinon');
 
@@ -13,6 +13,9 @@ const EmailNotifier = require('../src/notifications/EmailNotifier');
 const bugEvents = require('../src/notifications/bugEvents');
 const { EVENT_TYPES } = require('../src/notifications/rules');
 const bugService = require('../src/services/bugService');
+const request = require('supertest');
+const app = require('../src/app');
+const { getNotifications, markRead } = require('../src/controllers/notificationController');
 
 const bug = { ticketId: 101, reporter: 'tester_sarah', assignee: 'dev_alex' };
 
@@ -93,6 +96,7 @@ describe('Notifications (FR-2)', () => {
         bugId: 101,
         eventType: EVENT_TYPES.CLAIMED,
         message: 'BUG-101 was claimed by dev_alex.',
+        timestamp: new Date('2026-10-12T00:00:00Z'),
       }]);
     });
 
@@ -224,6 +228,85 @@ describe('Notifications (FR-2)', () => {
       try { await bugService.verify(101, 'qa_lead', 'reopen', ''); } catch (err) { /* expected 400 */ }
 
       expect(notifyStub.called).to.be.false;
+    });
+  });
+
+  describe('Notifications API', () => {
+    const ID = '670a00010000000000000001';
+    let res;
+
+    beforeEach(() => {
+      res = { status: sinon.stub().returnsThis(), json: sinon.spy() };
+    });
+
+    // Notification.find(...).sort(...).lean() resolving to the given list.
+    const stubFind = list => sinon.stub(Notification, 'find')
+      .returns({ sort: sinon.stub().returns({ lean: sinon.stub().resolves(list) }) });
+
+    it('FR-2: lists only the logged-in user\'s notifications with the unread count', async () => {
+      const findStub = stubFind([
+        { _id: ID, recipient: 'tester_sarah', read: false },
+        { _id: '670a00010000000000000002', recipient: 'tester_sarah', read: true },
+      ]);
+
+      await getNotifications({ authenticatedUser: { username: 'tester_sarah' } }, res);
+
+      expect(findStub.calledOnceWith({ recipient: 'tester_sarah' })).to.be.true;
+      expect(res.json.firstCall.args[0]).to.include({ success: true, count: 2, unread: 1 });
+    });
+
+    it('FR-2: lists newest notifications first', async () => {
+      const findStub = stubFind([]);
+
+      await getNotifications({ authenticatedUser: { username: 'tester_sarah' } }, res);
+
+      expect(findStub.firstCall.returnValue.sort.calledWith({ timestamp: -1 })).to.be.true;
+    });
+
+    it('FR-2: marks the user\'s own notification as read', async () => {
+      const updateStub = sinon.stub(Notification, 'findOneAndUpdate').resolves({ _id: ID, read: true });
+
+      await markRead({ params: { id: ID }, authenticatedUser: { username: 'tester_sarah' } }, res);
+
+      expect(updateStub.calledOnceWith({ _id: ID, recipient: 'tester_sarah' }, { read: true }, { new: true })).to.be.true;
+      expect(res.status.called).to.be.false; // default 200
+      expect(res.json.firstCall.args[0].notification.read).to.be.true;
+    });
+
+    it('FR-2 (404): marking someone else\'s notification returns 404 and changes nothing', async () => {
+      // The filter includes the recipient, so another user's notification never matches.
+      sinon.stub(Notification, 'findOneAndUpdate').resolves(null);
+
+      await markRead({ params: { id: ID }, authenticatedUser: { username: 'dev_alex' } }, res);
+
+      expect(Notification.findOneAndUpdate.firstCall.args[0]).to.deep.equal({ _id: ID, recipient: 'dev_alex' });
+      expect(res.status.calledWith(404)).to.be.true;
+    });
+
+    it('FR-2 (404): an unknown notification ID returns 404', async () => {
+      sinon.stub(Notification, 'findOneAndUpdate').resolves(null);
+
+      await markRead({ params: { id: '670a000100000000000000ff' }, authenticatedUser: { username: 'tester_sarah' } }, res);
+
+      expect(res.status.calledWith(404)).to.be.true;
+      expect(res.json.calledWith({ success: false, errors: ['Notification not found.'] })).to.be.true;
+    });
+
+    it('FR-2 (404): a malformed ID returns 404 without querying the database', async () => {
+      const updateStub = sinon.stub(Notification, 'findOneAndUpdate');
+
+      await markRead({ params: { id: 'not-an-id' }, authenticatedUser: { username: 'tester_sarah' } }, res);
+
+      expect(res.status.calledWith(404)).to.be.true;
+      expect(updateStub.called).to.be.false;
+    });
+
+    it('FR-2 (401): both endpoints require a login', async () => {
+      const list = await request(app).get('/api/notifications');
+      const mark = await request(app).patch(`/api/notifications/${ID}/read`);
+
+      expect(list.status).to.equal(401);
+      expect(mark.status).to.equal(401);
     });
   });
 });
