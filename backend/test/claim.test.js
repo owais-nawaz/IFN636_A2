@@ -7,6 +7,7 @@ const sinon = require('sinon');
 
 const Bug = require('../src/models/Bug');
 const { claimBug } = require('../src/controllers/bugController');
+const bugEvents = require('../src/notifications/bugEvents');
 
 describe('Claim ticket (FR-4a)', () => {
   let res;
@@ -16,6 +17,7 @@ describe('Claim ticket (FR-4a)', () => {
       status: sinon.stub().returnsThis(),
       json: sinon.spy(),
     };
+    sinon.stub(bugEvents, 'notify').resolves(); // events are tested in notifications.test.js
   });
 
   afterEach(() => sinon.restore());

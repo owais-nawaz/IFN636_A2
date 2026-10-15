@@ -6,6 +6,7 @@ const sinon = require('sinon');
 
 const Bug = require('../src/models/Bug');
 const { claim, resolve, verify, BugServiceError } = require('../src/services/bugService');
+const bugEvents = require('../src/notifications/bugEvents');
 
 // Runs the promise and checks it failed with the expected error code.
 async function expectError(promise, code) {
@@ -20,6 +21,8 @@ async function expectError(promise, code) {
 }
 
 describe('Bug service: claim transitions (FR-4a)', () => {
+  // Events are tested in notifications.test.js; keep these tests on the state rules.
+  beforeEach(() => sinon.stub(bugEvents, 'notify').resolves());
   afterEach(() => sinon.restore());
 
   ['Open', 'Re-opened'].forEach((status) => {
@@ -59,6 +62,8 @@ describe('Bug service: claim transitions (FR-4a)', () => {
 });
 
 describe('Bug service: resolve transitions (FR-4a)', () => {
+  // Events are tested in notifications.test.js; keep these tests on the state rules.
+  beforeEach(() => sinon.stub(bugEvents, 'notify').resolves());
   afterEach(() => sinon.restore());
 
   it('FR-4a: resolve is allowed from In Progress and returns Resolved', async () => {
@@ -105,6 +110,8 @@ describe('Bug service: resolve transitions (FR-4a)', () => {
 });
 
 describe('Bug service: verify transitions (FR-4a)', () => {
+  // Events are tested in notifications.test.js; keep these tests on the state rules.
+  beforeEach(() => sinon.stub(bugEvents, 'notify').resolves());
   afterEach(() => sinon.restore());
 
   it('FR-4a: verify close is allowed from Resolved and returns Closed', async () => {
