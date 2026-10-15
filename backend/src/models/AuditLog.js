@@ -32,19 +32,26 @@ const AUDITABLE_FIELDS = [
 ];
 
 const AuditLogSchema = new mongoose.Schema({
-  bugId:        { type: Number, required: true, index: true },
+  bugId:        { type: Number, required: true },
   action:       { type: String, required: true, enum: ACTION_TYPES },
-  changedBy:    { type: String, required: true, index: true },
+  changedBy:    { type: String, required: true },
   assignee:     { type: String, default: 'Unassigned' },
   fieldChanged: { type: String, required: true, enum: AUDITABLE_FIELDS },
   prevValue:    { type: mongoose.Schema.Types.Mixed, default: null },
+  oldValue:     { type: mongoose.Schema.Types.Mixed, default: null },
   newValue:     { type: mongoose.Schema.Types.Mixed, default: null },
-  timestamp:    { type: Date, default: Date.now, index: true },
+  timestamp:    { type: Date, default: Date.now },
   details:      { type: mongoose.Schema.Types.Mixed, default: null },
 }, {
-  timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
+});
+
+AuditLogSchema.pre('validate', function () {
+  if (this.actingUser && !this.changedBy) this.changedBy = this.actingUser;
+  if (this.changedBy && !this.actingUser) this.actingUser = this.changedBy;
+  if (this.oldValue !== undefined && this.prevValue === undefined) this.prevValue = this.oldValue;
+  if (this.prevValue !== undefined && this.oldValue === undefined) this.oldValue = this.prevValue;
 });
 
 AuditLogSchema.virtual('id').get(function () {
