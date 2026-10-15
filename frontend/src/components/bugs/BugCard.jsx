@@ -2,7 +2,9 @@ import StatusBadge from '../shared/StatusBadge';
 
 export default function BugCard({ bug, currentUser, onClaim, onResolve }) {
   const id = bug.ticketId || bug.id;
-  const canClaim   = bug.status === 'Open'        && currentUser?.role === 'Developer' && (bug.assignee === 'Unassigned' || !bug.assignee);
+  const isClaimableStatus = (bug.status === 'Open' && (bug.assignee === 'Unassigned' || !bug.assignee))
+    || bug.status === 'Re-opened';
+  const canClaim = isClaimableStatus && currentUser?.role === 'Developer';
   const canResolve = bug.status === 'In Progress' && currentUser?.role === 'Developer' && bug.assignee === currentUser?.username;
 
   return (
@@ -42,7 +44,7 @@ export default function BugCard({ bug, currentUser, onClaim, onResolve }) {
 
       {(canClaim || canResolve) && (
         <div className="bug-card__actions">
-          {canClaim   && <button className="btn btn-primary btn-full" onClick={() => onClaim(bug)}>Claim and Start Work</button>}
+          {canClaim && <button className="btn btn-primary btn-full" onClick={() => onClaim(bug)}>Claim and Start Work</button>}
           {canResolve && <button className="btn btn-resolve btn-full" onClick={() => onResolve(bug)}>Submit Resolution</button>}
         </div>
       )}
