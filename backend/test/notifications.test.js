@@ -1,6 +1,5 @@
-// Notifications (FR-2): Observer subject, notifiers and recipient rules.
-// Uses fake events in the BugService contract shape (BTS2-48) until the
-// service emits real ones.
+// Notifications (FR-2): Observer subject, notifiers, recipient rules, and the
+// events BugService emits (contract on BTS2-48).
 const { expect } = require('chai');
 const sinon = require('sinon');
 
@@ -13,6 +12,7 @@ const InAppNotifier = require('../src/notifications/InAppNotifier');
 const EmailNotifier = require('../src/notifications/EmailNotifier');
 const bugEvents = require('../src/notifications/bugEvents');
 const { EVENT_TYPES } = require('../src/notifications/rules');
+const bugService = require('../src/services/bugService');
 
 const bug = { ticketId: 101, reporter: 'tester_sarah', assignee: 'dev_alex' };
 
@@ -162,6 +162,68 @@ describe('Notifications (FR-2)', () => {
       expect(userStub.calledWith({ username: { $in: ['tester_sarah'] } })).to.be.true;
       expect(logStub.calledOnce).to.be.true;
       expect(logStub.firstCall.args[0]).to.include('To: sarah@qut.edu.au').and.include('BUG-101 was claimed by dev_alex.');
+    });
+  });
+
+  describe('BugService emits events', () => {
+    let notifyStub;
+
+    beforeEach(() => {
+      notifyStub = sinon.stub(bugEvents, 'notify').resolves();
+      sinon.stub(Bug, 'findOneAndUpdate').resolves({ ticketId: 101 });
+    });
+
+    const emitted = [
+      ['claim',  'Open',        () => bugService.claim(101, 'dev_alex'),                                    EVENT_TYPES.CLAIMED,  'dev_alex', 'In Progress'],
+      ['resolve', 'In Progress', () => bugService.resolve(101, 'dev_alex', 'Code Fix', 'Fixed the null check.'), EVENT_TYPES.RESOLVED, 'dev_alex', 'Resolved'],
+      ['close',  'Resolved',    () => bugService.verify(101, 'qa_lead', 'close', null),                     EVENT_TYPES.CLOSED,   'qa_lead',  'Closed'],
+      ['reopen', 'Resolved',    () => bugService.verify(101, 'qa_lead', 'reopen', 'Still crashes.'),        EVENT_TYPES.REOPENED, 'qa_lead',  'Re-opened'],
+    ];
+
+    emitted.forEach(([action, from, run, type, actingUser, to]) => {
+      it(`FR-2: ${action} emits ${type} with the contract fields`, async () => {
+        Bug.findOneAndUpdate.resetHistory();
+        sinon.stub(Bug, 'findOne').resolves({ ticketId: 101, status: from });
+
+        await run();
+
+        expect(notifyStub.calledOnce).to.be.true;
+        const sent = notifyStub.firstCall.args[0];
+        expect(sent).to.include({ type, bugId: 101, actingUser, fieldChanged: 'status', oldValue: from, newValue: to });
+        expect(sent.timestamp).to.be.instanceOf(Date);
+        expect(notifyStub.calledAfter(Bug.findOneAndUpdate)).to.be.true;
+      });
+    });
+
+    it('FR-2 (409): an invalid transition emits nothing', async () => {
+      sinon.stub(Bug, 'findOne').resolves({ ticketId: 101, status: 'Closed' });
+
+      try { await bugService.claim(101, 'dev_alex'); } catch (err) { /* expected 409 */ }
+
+      expect(notifyStub.called).to.be.false;
+    });
+
+    it('FR-2 (409): a bug changed by someone else in between emits nothing', async () => {
+      sinon.stub(Bug, 'findOne').resolves({ ticketId: 101, status: 'Open' });
+      Bug.findOneAndUpdate.resolves(null);
+
+      try { await bugService.claim(101, 'dev_alex'); } catch (err) { /* expected 409 */ }
+
+      expect(notifyStub.called).to.be.false;
+    });
+
+    it('FR-2 (404): an unknown bug emits nothing', async () => {
+      sinon.stub(Bug, 'findOne').resolves(null);
+
+      try { await bugService.claim(999, 'dev_alex'); } catch (err) { /* expected 404 */ }
+
+      expect(notifyStub.called).to.be.false;
+    });
+
+    it('FR-2 (400): a validation error emits nothing', async () => {
+      try { await bugService.verify(101, 'qa_lead', 'reopen', ''); } catch (err) { /* expected 400 */ }
+
+      expect(notifyStub.called).to.be.false;
     });
   });
 });
