@@ -23,7 +23,8 @@ function isOverdue(bug, now) {
 
 // Flags every overdue active bug and raises its priority one level.
 // Safe to run repeatedly and on both servers at once: the update only
-// matches while escalatedAt is still empty, so a bug is changed only once.
+// matches while escalatedAt is still empty, so a bug is changed only once,
+// and only while the bug is still active (it may be resolved in between).
 async function runEscalation(now = new Date()) {
   const shortestWindow = Math.min(...Object.values(SLA_HOURS)) * HOUR_MS;
   const candidates = await Bug.find({
@@ -37,7 +38,7 @@ async function runEscalation(now = new Date()) {
     const from = bug.priority;
     const to = nextPriority(from);
     const updated = await Bug.findOneAndUpdate(
-      { _id: bug._id, escalatedAt: null },
+      { _id: bug._id, escalatedAt: null, status: { $in: ACTIVE_STATUSES } },
       { slaBreached: true, escalatedAt: now, priority: to },
       { new: true }
     );
@@ -47,16 +48,18 @@ async function runEscalation(now = new Date()) {
   return { checked: candidates.length, escalated };
 }
 
-// Runs the escalation every 15 minutes. Errors are logged, never thrown,
-// so a failed run cannot crash the server.
+// Runs the escalation once straight away (catching bugs that went overdue
+// while the server was down), then every 15 minutes. Errors are logged,
+// never thrown, so a failed run cannot crash the server.
 function startSlaTimer() {
-  return setInterval(() => {
-    runEscalation()
-      .then(({ escalated }) => {
-        if (escalated.length) console.log(`[sla] escalated ${escalated.map(e => `BUG-${e.ticketId}`).join(', ')}`);
-      })
-      .catch(err => console.error('[sla] escalation run failed:', err.message));
-  }, RUN_EVERY_MS);
+  const tick = () => runEscalation()
+    .then(({ escalated }) => {
+      if (escalated.length) console.log(`[sla] escalated ${escalated.map(e => `BUG-${e.ticketId}`).join(', ')}`);
+    })
+    .catch(err => console.error('[sla] escalation run failed:', err.message));
+
+  tick();
+  return setInterval(tick, RUN_EVERY_MS);
 }
 
 module.exports = { SLA_HOURS, nextPriority, isOverdue, runEscalation, startSlaTimer, RUN_EVERY_MS };
