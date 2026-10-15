@@ -63,6 +63,7 @@ async function resolve(bugId, username, resolutionType, resolutionNotes) {
     resolutionType,
     resolutionNotes: resolutionNotes.trim(),
     assignee: username,
+    resolvedAt: new Date(),
   });
 }
 
