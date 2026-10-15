@@ -218,3 +218,18 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .bts-modal__header--workflow .bts-modal__close { color: rgba(255,255,255,0.85); }
 .bts-modal__header--workflow .bts-modal__close:hover { color: #FFFFFF; }
 .btn-resolve { background-color: var(--bts-secondary); color: white; }
+
+/* Notification bell (BTS2-34) */
+.bts-bell { position: relative; }
+.bts-bell__button { position: relative; background: none; border: none; color: #FFFFFF; padding: 6px; border-radius: var(--bts-radius-sm); display: inline-flex; cursor: pointer; }
+.bts-bell__button:hover { background: rgba(255,255,255,0.15); }
+.bts-bell__badge { position: absolute; top: 0; right: 0; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--bts-danger); color: #FFFFFF; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.bts-bell__panel { position: absolute; right: 0; top: calc(100% + 8px); width: 320px; max-height: 400px; overflow-y: auto; background: var(--bts-surface); border: 1px solid var(--bts-border); border-radius: var(--bts-radius); box-shadow: var(--bts-shadow); z-index: 200; }
+.bts-bell__header { padding: 10px 14px; font-weight: 600; font-size: 13px; color: var(--bts-text); border-bottom: 1px solid var(--bts-border); }
+.bts-bell__empty { padding: 16px 14px; font-size: 13px; color: var(--bts-text-muted); }
+.bts-bell__list { list-style: none; margin: 0; padding: 0; }
+.bts-bell__item { width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--bts-border); padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; cursor: default; }
+.bts-bell__item--unread { background: var(--bts-bg); border-left: 3px solid var(--bts-primary); cursor: pointer; }
+.bts-bell__item--unread:hover { background: var(--bts-surface-2); }
+.bts-bell__message { font-size: 13px; color: var(--bts-text); }
+.bts-bell__time { font-size: 11px; color: var(--bts-text-muted); }
