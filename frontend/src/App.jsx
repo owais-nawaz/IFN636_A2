@@ -43,7 +43,7 @@ function AppContent() {
 
   return (
     <div className="bts-layout">
-      <Navbar user={user} onLogout={logout} />
+      <Navbar user={user} onLogout={logout} refreshTrigger={refreshTrigger} />
       <SubNav user={user} activeTab={activeTab} onTabChange={setActiveTab} />
 
       {notification && (

@@ -61,3 +61,13 @@ export const reportsApi = {
     return res.blob();
   },
 };
+
+export const notificationsApi = {
+  getAll: (user) => fetch(`${BASE}/notifications`, {
+    headers: authHeaders(user),
+  }).then(parseRes),
+
+  markRead: (id, user) => fetch(`${BASE}/notifications/${id}/read`, {
+    method: 'PATCH', headers: authHeaders(user),
+  }).then(parseRes),
+};
