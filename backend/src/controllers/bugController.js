@@ -23,9 +23,9 @@ async function createBug(req, res) {
   const reporter = req.authenticatedUser.username;
 
   const errors = [];
-  if (!title || title.trim().length < 5) errors.push('Title must be at least 5 characters.');
-  if (!module || module.trim() === '') errors.push('Module is required.');
-  if (!description || description.trim().length < 10) errors.push('Description must be at least 10 characters.');
+  if (!title || title.trim().length < 5)               errors.push('Title must be at least 5 characters.');
+  if (!module || module.trim() === '')                  errors.push('Module is required.');
+  if (!description || description.trim().length < 10)  errors.push('Description must be at least 10 characters.');
   if (!['Low', 'Medium', 'High', 'Critical'].includes(severity)) errors.push('Valid severity is required.');
   if (!['Low', 'Medium', 'High', 'Critical'].includes(priority)) errors.push('Valid priority is required.');
   if (errors.length) return res.status(400).json({ success: false, errors });
@@ -39,17 +39,15 @@ async function createBug(req, res) {
     status: 'Open', reporter, assignee: 'Unassigned',
   });
 
-  res.status(201).json({
-    success: true, message: `BUG-${ticketId} created.`,
-    bug: { ...newBug.toObject(), id: ticketId }
-  });
+  res.status(201).json({ success: true, message: `BUG-${ticketId} created.`,
+    bug: { ...newBug.toObject(), id: ticketId } });
 }
 
 async function getBugs(req, res) {
   const { status, priority, search } = req.query;
 
   const match = {};
-  if (status && status !== 'All') match.status = new RegExp(`^${status}$`, 'i');
+  if (status && status !== 'All')     match.status   = new RegExp(`^${status}$`, 'i');
   if (priority && priority !== 'All') match.priority = new RegExp(`^${priority}$`, 'i');
 
   let bugs;
@@ -59,7 +57,7 @@ async function getBugs(req, res) {
     const cleanedId = trimmed.replace(/^bug-?/i, '');
 
     const orConditions = [
-      { title: { $regex: trimmed, $options: 'i' } },
+      { title:       { $regex: trimmed, $options: 'i' } },
       { description: { $regex: trimmed, $options: 'i' } },
     ];
     if (cleanedId) {
@@ -80,15 +78,13 @@ async function getBugs(req, res) {
 }
 
 async function claimBug(req, res) {
-  const bugId = parseInt(req.params.id, 10);
+  const bugId    = parseInt(req.params.id, 10);
   const assignee = req.authenticatedUser.username;
 
   try {
     const updated = await bugService.claim(bugId, assignee);
-    res.json({
-      success: true, message: `BUG-${bugId} claimed by ${assignee}.`,
-      bug: { ...updated.toObject(), id: updated.ticketId }
-    });
+    res.json({ success: true, message: `BUG-${bugId} claimed by ${assignee}.`,
+      bug: { ...updated.toObject(), id: updated.ticketId } });
   } catch (err) {
     sendServiceError(res, err);
   }
@@ -101,10 +97,8 @@ async function resolveBug(req, res) {
 
   try {
     const updated = await bugService.resolve(bugId, developer, resolutionType, resolutionNotes);
-    res.json({
-      success: true, message: `BUG-${bugId} resolved by ${developer}.`,
-      bug: { ...updated.toObject(), id: updated.ticketId }
-    });
+    res.json({ success: true, message: `BUG-${bugId} resolved by ${developer}.`,
+      bug: { ...updated.toObject(), id: updated.ticketId } });
   } catch (err) {
     sendServiceError(res, err);
   }
@@ -117,10 +111,8 @@ async function verifyBug(req, res) {
 
   try {
     const updated = await bugService.verify(bugId, qaUser, action, qaNotes);
-    res.json({
-      success: true, message: `BUG-${bugId} → ${updated.status}.`,
-      bug: { ...updated.toObject(), id: updated.ticketId }
-    });
+    res.json({ success: true, message: `BUG-${bugId} → ${updated.status}.`,
+      bug: { ...updated.toObject(), id: updated.ticketId } });
   } catch (err) {
     sendServiceError(res, err);
   }
