@@ -1,106 +1,5 @@
 const AuditLog = require('../models/AuditLog');
-
-/**
- * AuditEntry
- * Represents and validates a single audit record before persisting to the database.
- */
-class AuditEntry {
-  constructor({
-    bugId,
-    action,
-    type,
-    changedBy,
-    actingUser,
-    user,
-    assignee,
-    fieldChanged,
-    field,
-    prevValue,
-    oldValue,
-    newValue,
-    timestamp,
-    details,
-  } = {}) {
-    this.bugId = Number(bugId);
-    this.action = action || type || 'UPDATE';
-    this.changedBy = changedBy || actingUser || user;
-    this.assignee = assignee !== undefined && assignee !== null ? assignee : 'Unassigned';
-    this.fieldChanged = fieldChanged || field || 'status';
-    this.prevValue = prevValue !== undefined ? prevValue : (oldValue !== undefined ? oldValue : null);
-    this.newValue = newValue !== undefined ? newValue : null;
-    this.timestamp = timestamp ? new Date(timestamp) : new Date();
-    this.details = details !== undefined ? details : null;
-  }
-
-  /**
-   * Validate the audit entry fields against required criteria and schema enums.
-   */
-  validate() {
-    const errors = [];
-
-    if (!this.bugId || isNaN(this.bugId)) {
-      errors.push('bugId is required and must be a valid number.');
-    }
-
-    if (!this.changedBy || typeof this.changedBy !== 'string' || !this.changedBy.trim()) {
-      errors.push('changedBy (or actingUser) is required.');
-    }
-
-    if (!this.fieldChanged || typeof this.fieldChanged !== 'string') {
-      errors.push('fieldChanged is required.');
-    } else if (!AuditLog.AUDITABLE_FIELDS.includes(this.fieldChanged)) {
-      errors.push(`Invalid fieldChanged: '${this.fieldChanged}'. Allowed fields: ${AuditLog.AUDITABLE_FIELDS.join(', ')}.`);
-    }
-
-    if (!this.action || typeof this.action !== 'string') {
-      errors.push('action (or type) is required.');
-    } else if (!AuditLog.ACTION_TYPES.includes(this.action)) {
-      errors.push(`Invalid action: '${this.action}'. Allowed actions: ${AuditLog.ACTION_TYPES.join(', ')}.`);
-    }
-
-    if (errors.length) {
-      const err = new Error(errors.join(' '));
-      err.name = 'AuditEntryValidationError';
-      err.errors = errors;
-      throw err;
-    }
-
-    return true;
-  }
-
-  /**
-   * Convert to plain object representation for MongoDB insertion.
-   */
-  toObject() {
-    return {
-      bugId: this.bugId,
-      action: this.action,
-      changedBy: this.changedBy,
-      assignee: this.assignee,
-      fieldChanged: this.fieldChanged,
-      prevValue: this.prevValue,
-      newValue: this.newValue,
-      timestamp: this.timestamp,
-      details: this.details,
-    };
-  }
-
-  /**
-   * Directly save this entry to the database via AuditLog.
-   */
-  async save() {
-    this.validate();
-    return AuditLog.create(this.toObject());
-  }
-
-  /**
-   * Factory / static creation method.
-   */
-  static async create(data) {
-    const entry = new AuditEntry(data);
-    return entry.save();
-  }
-}
+const AuditEntry = require('./AuditEntry');
 
 /**
  * AuditService
@@ -143,16 +42,17 @@ class AuditService {
     assignee = 'Unassigned',
     fieldChanged,
     prevValue = null,
+    oldValue = null,
     newValue = null,
     action = 'UPDATE',
     details = null,
   }) {
     return this.log({
       bugId,
-      changedBy: changedBy || actingUser,
+      actingUser: actingUser || changedBy,
       assignee,
       fieldChanged,
-      prevValue,
+      oldValue: oldValue !== null ? oldValue : prevValue,
       newValue,
       action,
       details,
@@ -168,10 +68,10 @@ class AuditService {
     return this.log({
       bugId,
       action: 'CREATE',
-      changedBy: user,
+      actingUser: user,
       assignee: (bug && bug.assignee) || 'Unassigned',
       fieldChanged: 'bug',
-      prevValue: null,
+      oldValue: null,
       newValue: bug ? (bug.title || 'Created') : 'Created',
       details: bug,
     });
@@ -193,10 +93,10 @@ class AuditService {
     return this.log({
       bugId,
       action,
-      changedBy: changedBy || actingUser,
+      actingUser: actingUser || changedBy,
       assignee,
       fieldChanged: 'status',
-      prevValue: prevStatus,
+      oldValue: prevStatus,
       newValue: newStatus,
       details: notes ? { notes } : null,
     });
