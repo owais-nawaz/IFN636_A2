@@ -76,12 +76,12 @@ describe('Bug service: resolve transitions (FR-4a)', () => {
     expect(result.status).to.equal('Resolved');
     expect(updateStub.calledOnceWith(
       { ticketId: 101, status: 'In Progress' },
-      {
+      sinon.match({
         resolutionType: 'Code Fix',
         resolutionNotes: 'Fixed the null check in login.',
         assignee: 'dev_alex',
         status: 'Resolved',
-      },
+      }),
       { new: true }
     )).to.be.true;
   });

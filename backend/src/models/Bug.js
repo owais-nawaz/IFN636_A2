@@ -15,6 +15,7 @@ const BugSchema = new mongoose.Schema({
   qaNotes:         { type: String, default: null },
   slaBreached:     { type: Boolean, default: false },
   escalatedAt:     { type: Date, default: null },
+  resolvedAt:      { type: Date, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Bug', BugSchema);

@@ -9,6 +9,7 @@ import BugDashboard from './components/bugs/BugDashboard';
 import BugSubmissionForm from './components/bugs/BugSubmissionForm';
 import DeveloperWorkspace from './components/developer/DeveloperWorkspace';
 import QAVerificationPanel from './components/qa/QAVerificationPanel';
+import ReportsPanel from './components/qa/ReportsPanel';
 import { bugsApi } from './api/client';
 
 function AppContent() {
@@ -65,6 +66,9 @@ function AppContent() {
         )}
         {activeTab === 'qa' && user.role === 'QALead' && (
           <QAVerificationPanel currentUser={user} onNotify={notify} />
+        )}
+        {activeTab === 'reports' && user.role === 'QALead' && (
+          <ReportsPanel currentUser={user} onNotify={notify} />
         )}
       </main>
     </div>
