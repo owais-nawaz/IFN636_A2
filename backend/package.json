@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "test": "mocha --recursive --exit"
+    "test": "mocha --recursive --exit --require test/setup.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
