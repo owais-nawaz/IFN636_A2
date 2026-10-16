@@ -239,28 +239,44 @@ describe('Notifications (FR-2)', () => {
       res = { status: sinon.stub().returnsThis(), json: sinon.spy() };
     });
 
-    // Notification.find(...).sort(...).lean() resolving to the given list.
-    const stubFind = list => sinon.stub(Notification, 'find')
-      .returns({ sort: sinon.stub().returns({ lean: sinon.stub().resolves(list) }) });
+    // Notification.find(...).sort(...).limit(...).lean() resolving to the given
+    // list, and countDocuments resolving to the given unread count.
+    const stubFind = (list, unread = 0) => {
+      const query = { sort: sinon.stub(), limit: sinon.stub(), lean: sinon.stub().resolves(list) };
+      query.sort.returns(query);
+      query.limit.returns(query);
+      sinon.stub(Notification, 'countDocuments').resolves(unread);
+      return { findStub: sinon.stub(Notification, 'find').returns(query), query };
+    };
 
     it('FR-2: lists only the logged-in user\'s notifications with the unread count', async () => {
-      const findStub = stubFind([
+      const { findStub } = stubFind([
         { _id: ID, recipient: 'tester_sarah', read: false },
         { _id: '670a00010000000000000002', recipient: 'tester_sarah', read: true },
-      ]);
+      ], 1);
 
       await getNotifications({ authenticatedUser: { username: 'tester_sarah' } }, res);
 
       expect(findStub.calledOnceWith({ recipient: 'tester_sarah' })).to.be.true;
+      expect(Notification.countDocuments.calledOnceWith({ recipient: 'tester_sarah', read: false })).to.be.true;
       expect(res.json.firstCall.args[0]).to.include({ success: true, count: 2, unread: 1 });
     });
 
-    it('FR-2: lists newest notifications first', async () => {
-      const findStub = stubFind([]);
+    it('FR-2: lists the newest 50 notifications first', async () => {
+      const { query } = stubFind([]);
 
       await getNotifications({ authenticatedUser: { username: 'tester_sarah' } }, res);
 
-      expect(findStub.firstCall.returnValue.sort.calledWith({ timestamp: -1 })).to.be.true;
+      expect(query.sort.calledWith({ timestamp: -1 })).to.be.true;
+      expect(query.limit.calledWith(50)).to.be.true;
+    });
+
+    it('FR-2: the unread count covers notifications beyond the 50 listed', async () => {
+      stubFind([{ _id: ID, recipient: 'tester_sarah', read: true }], 72);
+
+      await getNotifications({ authenticatedUser: { username: 'tester_sarah' } }, res);
+
+      expect(res.json.firstCall.args[0]).to.include({ count: 1, unread: 72 });
     });
 
     it('FR-2: marks the user\'s own notification as read', async () => {
