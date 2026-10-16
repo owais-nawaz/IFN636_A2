@@ -37,7 +37,6 @@ const AuditLogSchema = new mongoose.Schema({
   changedBy:    { type: String, required: true },
   assignee:     { type: String, default: 'Unassigned' },
   fieldChanged: { type: String, required: true, enum: AUDITABLE_FIELDS },
-  prevValue:    { type: mongoose.Schema.Types.Mixed, default: null },
   oldValue:     { type: mongoose.Schema.Types.Mixed, default: null },
   newValue:     { type: mongoose.Schema.Types.Mixed, default: null },
   timestamp:    { type: Date, default: Date.now },
@@ -50,13 +49,19 @@ const AuditLogSchema = new mongoose.Schema({
 AuditLogSchema.pre('validate', function () {
   if (this.actingUser && !this.changedBy) this.changedBy = this.actingUser;
   if (this.changedBy && !this.actingUser) this.actingUser = this.changedBy;
-  if (this.oldValue !== undefined && this.prevValue === undefined) this.prevValue = this.oldValue;
-  if (this.prevValue !== undefined && this.oldValue === undefined) this.oldValue = this.prevValue;
 });
 
 AuditLogSchema.virtual('id').get(function () {
   return this._id ? this._id.toHexString() : undefined;
 });
+
+AuditLogSchema.virtual('prevValue')
+  .get(function () {
+    return this.oldValue;
+  })
+  .set(function (val) {
+    this.oldValue = val;
+  });
 
 AuditLogSchema.virtual('actingUser')
   .get(function () {

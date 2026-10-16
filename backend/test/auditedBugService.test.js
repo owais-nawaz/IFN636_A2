@@ -62,6 +62,30 @@ describe('AuditedBugService (Decorator Pattern)', () => {
 
       expect(auditCreateStub.called).to.be.false;
     });
+
+    it('skips saving AuditEntry if previous status could not be determined', async () => {
+      bugFindStub.resolves(null);
+      const updatedBug = { ticketId: 101, status: 'In Progress' };
+      mockInner.claim.resolves(updatedBug);
+
+      const result = await auditedService.claim(101, 'dev_alex');
+
+      expect(mockInner.claim.calledOnceWith(101, 'dev_alex')).to.be.true;
+      expect(result).to.deep.equal(updatedBug);
+      expect(auditCreateStub.called).to.be.false;
+    });
+
+    it('still returns updated bug even if saving AuditEntry throws an error', async () => {
+      bugFindStub.resolves({ ticketId: 101, status: 'Open' });
+      const updatedBug = { ticketId: 101, status: 'In Progress' };
+      mockInner.claim.resolves(updatedBug);
+      auditCreateStub.rejects(new Error('Database write error'));
+
+      const result = await auditedService.claim(101, 'dev_alex');
+
+      expect(result).to.deep.equal(updatedBug);
+      expect(auditCreateStub.calledOnce).to.be.true;
+    });
   });
 
   describe('resolve decoration', () => {

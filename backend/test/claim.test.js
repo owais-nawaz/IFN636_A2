@@ -6,11 +6,13 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 
 const Bug = require('../src/models/Bug');
+const AuditLog = require('../src/models/AuditLog');
 const { claimBug } = require('../src/controllers/bugController');
 const bugEvents = require('../src/notifications/bugEvents');
 
 describe('Claim ticket (FR-4a)', () => {
   let res;
+  let auditCreateStub;
 
   beforeEach(() => {
     res = {
@@ -18,6 +20,7 @@ describe('Claim ticket (FR-4a)', () => {
       json: sinon.spy(),
     };
     sinon.stub(bugEvents, 'notify').resolves(); // events are tested in notifications.test.js
+    auditCreateStub = sinon.stub(AuditLog, 'create').resolves({});
   });
 
   afterEach(() => sinon.restore());
@@ -40,6 +43,16 @@ describe('Claim ticket (FR-4a)', () => {
     const body = res.json.firstCall.args[0];
     expect(body.success).to.be.true;
     expect(body.bug).to.include({ id: 101, assignee: 'dev_mike', status: 'In Progress' });
+
+    // Verify AuditedBugService decorator recorded the audit entry
+    expect(auditCreateStub.calledOnce).to.be.true;
+    const entry = auditCreateStub.firstCall.args[0];
+    expect(entry.bugId).to.equal(101);
+    expect(entry.action).to.equal('bug.claimed');
+    expect(entry.actingUser).to.equal('dev_mike');
+    expect(entry.fieldChanged).to.equal('status');
+    expect(entry.oldValue).to.equal('Open');
+    expect(entry.newValue).to.equal('In Progress');
   });
 
   it('FR-4a (404): returns 404 when the ticket does not exist', async () => {
@@ -50,6 +63,7 @@ describe('Claim ticket (FR-4a)', () => {
 
     expect(res.status.calledWith(404)).to.be.true;
     expect(res.json.calledWith({ success: false, errors: ['Ticket not found.'] })).to.be.true;
+    expect(auditCreateStub.called).to.be.false;
   });
 
   it('FR-4a (409): returns 409 and saves nothing when the ticket is Closed', async () => {
@@ -62,5 +76,6 @@ describe('Claim ticket (FR-4a)', () => {
     expect(res.status.calledWith(409)).to.be.true;
     expect(res.json.firstCall.args[0].success).to.be.false;
     expect(updateStub.called).to.be.false;
+    expect(auditCreateStub.called).to.be.false;
   });
 });
