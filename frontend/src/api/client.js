@@ -60,6 +60,10 @@ export const reportsApi = {
     if (!res.ok) { await parseRes(res); throw new Error('Export failed.'); } // parseRes throws the server's message
     return res.blob();
   },
+
+  getSummary: (user) => fetch(`${BASE}/reports/summary`, {
+    headers: authHeaders(user),
+  }).then(parseRes),
 };
 
 export const notificationsApi = {
