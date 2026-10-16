@@ -1,3 +1,4 @@
+const os      = require('os');
 const express = require('express');
 const cors    = require('cors');
 
@@ -15,8 +16,13 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 
+// ALB health check. Also says which instance answered (INSTANCE_NAME in each
+// server's .env, e.g. EC2-NodeA; the hostname if unset), so a curl loop through
+// the ALB shows traffic alternating between instances.
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'Bug Tracking System API running', port: process.env.PORT || 3000 });
+  const instance = process.env.INSTANCE_NAME || os.hostname();
+  res.set('X-Served-By', instance);
+  res.json({ status: 'Bug Tracking System API running', instance, port: process.env.PORT || 3000 });
 });
 
 app.use('/api', writeLimiter);
