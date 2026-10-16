@@ -28,6 +28,27 @@ class AuditedBugService {
     }
   }
 
+  async #record(bugId, action, username, oldStatus, newStatus) {
+    if (!oldStatus) {
+      console.error(`Skipping audit entry for bug ${bugId}: previous status could not be determined.`);
+      return;
+    }
+    try {
+      const entry = new AuditEntry({
+        bugId,
+        action,
+        actingUser: username,
+        fieldChanged: 'status',
+        oldValue: oldStatus,
+        newValue: newStatus,
+        timestamp: new Date(),
+      });
+      await entry.save();
+    } catch (err) {
+      console.error(`Failed to record audit entry for bug ${bugId}:`, err.message);
+    }
+  }
+
   /**
    * Decorates claim: calls real bugService.claim first, then saves AuditEntry upon success.
    */
@@ -37,25 +58,7 @@ class AuditedBugService {
     // Call real bug service first. If it fails, error is thrown and nothing is saved.
     const updated = await this.#inner.claim(bugId, username);
 
-    // Only reached if the real call succeeded
-    if (oldStatus) {
-      try {
-        const entry = new AuditEntry({
-          bugId,
-          action: 'bug.claimed',
-          actingUser: username,
-          fieldChanged: 'status',
-          oldValue: oldStatus,
-          newValue: updated ? updated.status : 'In Progress',
-          timestamp: new Date(),
-        });
-        await entry.save();
-      } catch (err) {
-        console.error(`Failed to record audit entry for bug ${bugId}:`, err.message);
-      }
-    } else {
-      console.error(`Skipping audit entry for bug ${bugId}: previous status could not be determined.`);
-    }
+    await this.#record(bugId, 'bug.claimed', username, oldStatus, updated ? updated.status : 'In Progress');
 
     return updated;
   }
@@ -69,25 +72,7 @@ class AuditedBugService {
     // Call real bug service first. If it fails, error is thrown and nothing is saved.
     const updated = await this.#inner.resolve(bugId, username, resolutionType, resolutionNotes);
 
-    // Only reached if the real call succeeded
-    if (oldStatus) {
-      try {
-        const entry = new AuditEntry({
-          bugId,
-          action: 'bug.resolved',
-          actingUser: username,
-          fieldChanged: 'status',
-          oldValue: oldStatus,
-          newValue: updated ? updated.status : 'Resolved',
-          timestamp: new Date(),
-        });
-        await entry.save();
-      } catch (err) {
-        console.error(`Failed to record audit entry for bug ${bugId}:`, err.message);
-      }
-    } else {
-      console.error(`Skipping audit entry for bug ${bugId}: previous status could not be determined.`);
-    }
+    await this.#record(bugId, 'bug.resolved', username, oldStatus, updated ? updated.status : 'Resolved');
 
     return updated;
   }
@@ -101,25 +86,9 @@ class AuditedBugService {
     // Call real bug service first. If it fails, error is thrown and nothing is saved.
     const updated = await this.#inner.verify(bugId, username, action, qaNotes);
 
-    if (oldStatus) {
-      try {
-        const actionType = action === 'close' ? 'bug.closed' : 'bug.reopened';
-        const entry = new AuditEntry({
-          bugId,
-          action: actionType,
-          actingUser: username,
-          fieldChanged: 'status',
-          oldValue: oldStatus,
-          newValue: updated ? updated.status : (action === 'close' ? 'Closed' : 'Re-opened'),
-          timestamp: new Date(),
-        });
-        await entry.save();
-      } catch (err) {
-        console.error(`Failed to record audit entry for bug ${bugId}:`, err.message);
-      }
-    } else {
-      console.error(`Skipping audit entry for bug ${bugId}: previous status could not be determined.`);
-    }
+    const actionType = action === 'close' ? 'bug.closed' : 'bug.reopened';
+    const fallbackStatus = action === 'close' ? 'Closed' : 'Re-opened';
+    await this.#record(bugId, actionType, username, oldStatus, updated ? updated.status : fallbackStatus);
 
     return updated;
   }
