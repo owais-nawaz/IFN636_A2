@@ -403,6 +403,170 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Summary",
+      "item": [
+        {
+          "name": "FR-3 AC1: QA Lead gets the summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 and success is true', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.equal(true);",
+                  "});",
+                  "",
+                  "pm.test('total and mttrSampleSize are numbers', function () {",
+                  "  const summary = pm.response.json().summary;",
+                  "  pm.expect(summary.total).to.be.a('number');",
+                  "  pm.expect(summary.mttrSampleSize).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('countsByStatus has all five statuses, each a number', function () {",
+                  "  const counts = pm.response.json().summary.countsByStatus;",
+                  "  pm.expect(Object.keys(counts)).to.have.members(['Open', 'In Progress', 'Resolved', 'Closed', 'Re-opened']);",
+                  "  Object.values(counts).forEach(function (n) { pm.expect(n).to.be.a('number'); });",
+                  "});",
+                  "",
+                  "pm.test('countsBySeverity has all four severities, each a number', function () {",
+                  "  const counts = pm.response.json().summary.countsBySeverity;",
+                  "  pm.expect(Object.keys(counts)).to.have.members(['Low', 'Medium', 'High', 'Critical']);",
+                  "  Object.values(counts).forEach(function (n) { pm.expect(n).to.be.a('number'); });",
+                  "});",
+                  "",
+                  "pm.test('mttrHours is a number or null', function () {",
+                  "  const hours = pm.response.json().summary.mttrHours;",
+                  "  pm.expect(hours === null || typeof hours === 'number').to.equal(true);",
+                  "});",
+                  "",
+                  "pm.test('total equals the sum of the status counts', function () {",
+                  "  const summary = pm.response.json().summary;",
+                  "  const sum = Object.values(summary.countsByStatus).reduce(function (a, b) { return a + b; }, 0);",
+                  "  pm.expect(sum).to.equal(summary.total);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{qaToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "summary"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC6 (401): summary with no token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('success is false', function () {",
+                  "  pm.expect(pm.response.json().success).to.equal(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "summary"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC6 (403): summary with Developer token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('success is false', function () {",
+                  "  pm.expect(pm.response.json().success).to.equal(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{devToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "summary"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-3 AC6 (403): summary with Tester token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('success is false', function () {",
+                  "  pm.expect(pm.response.json().success).to.equal(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{testerToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "summary"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }
