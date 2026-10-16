@@ -52,6 +52,10 @@ export const bugsApi = {
   create: (data, user) => fetch(`${BASE}/bugs`, {
     method: 'POST', headers: authHeaders(user), body: JSON.stringify(data)
   }).then(parseRes),
+
+  getHistory: (id, user) => fetch(`${BASE}/bugs/${id}/history`, {
+    headers: authHeaders(user),
+  }).then(parseRes),
 };
 
 export const notificationsApi = {

@@ -5,10 +5,11 @@ import StatusBadge from '../shared/StatusBadge';
 import SlaBadge from '../shared/SlaBadge';
 import { canDo } from '../shared/bugActions';
 import ReopenModal from './ReopenModal';
+import BugHistory from '../bugs/BugHistory';
 
 const DEFAULT = { status: 'All', priority: 'All', search: '' };
 
-function QACard({ bug, onVerifyClose, onReopenRequest }) {
+function QACard({ bug, currentUser, onVerifyClose, onReopenRequest }) {
   const id = bug.ticketId || bug.id;
   // Buttons are enabled only for the moves the bug's current status allows.
   const canClose = canDo(bug.status, 'close');
@@ -54,6 +55,8 @@ function QACard({ bug, onVerifyClose, onReopenRequest }) {
         <span>Rep: <strong>{bug.reporter}</strong></span>
         <span>Dev: <strong>{bug.assignee || 'Unassigned'}</strong></span>
       </div>
+
+      <BugHistory bugId={id} currentUser={currentUser} />
 
       {bug.status !== 'Closed' && (
         <div className="bug-card__actions bug-card__actions--split">
@@ -116,7 +119,7 @@ export default function QAVerificationPanel({ currentUser, onNotify }) {
       ) : (
         <div className="bug-grid">
           {bugs.map(b => (
-            <QACard key={b._id || b.ticketId} bug={b} onVerifyClose={handleClose} onReopenRequest={setReopenBug} />
+            <QACard key={b._id || b.ticketId} bug={b} currentUser={currentUser} onVerifyClose={handleClose} onReopenRequest={setReopenBug} />
           ))}
         </div>
       )}

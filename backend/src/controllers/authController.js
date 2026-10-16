@@ -2,8 +2,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
 async function signup(req, res) {
   try {
     const { username, email, password, role } = req.body;
@@ -20,7 +18,7 @@ async function signup(req, res) {
     const userRole = ['Tester', 'Developer', 'QALead'].includes(role) ? role : 'Tester';
     const user     = await User.create({ username: username.trim(), email: email.toLowerCase(), password: hashed, role: userRole });
 
-    const token = jwt.sign({ username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '2h' });
+    const token = jwt.sign({ username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '2h' });
 
     res.status(201).json({
       success: true,
@@ -44,7 +42,7 @@ async function login(req, res) {
     if (!user || !(await bcrypt.compare(password, user.password)))
       return res.status(401).json({ success: false, errors: ['Invalid username or password.'] });
 
-    const token = jwt.sign({ username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '2h' });
+    const token = jwt.sign({ username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '2h' });
 
     res.json({
       success: true,

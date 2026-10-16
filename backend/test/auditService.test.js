@@ -199,7 +199,7 @@ describe('AuditService and AuditEntry (BTS2-18)', () => {
       expect(saved.details).to.deep.equal({ notes: 'Fixed typo in regex' });
     });
 
-    it('BTS2-18: AuditService.getLogsForBug queries and sorts audit logs', async () => {
+    it('BTS2-18: AuditService.getLogsForBug queries and sorts audit logs descending by default or with sort: "desc"', async () => {
       const fakeLogs = [{ bugId: 101, action: 'CLAIM' }, { bugId: 101, action: 'CREATE' }];
       const queryMock = {
         sort: sinon.stub().returnsThis(),
@@ -213,6 +213,22 @@ describe('AuditService and AuditEntry (BTS2-18)', () => {
       expect(findStub.calledWith({ bugId: 101 })).to.be.true;
       expect(queryMock.sort.calledWith({ timestamp: -1 })).to.be.true;
       expect(queryMock.limit.calledWith(10)).to.be.true;
+      expect(logs).to.deep.equal(fakeLogs);
+    });
+
+    it('BTS2-18: AuditService.getLogsForBug sorts ascending with sort: "asc"', async () => {
+      const fakeLogs = [{ bugId: 101, action: 'CREATE' }, { bugId: 101, action: 'CLAIM' }];
+      const queryMock = {
+        sort: sinon.stub().returnsThis(),
+        limit: sinon.stub().returnsThis(),
+        lean: sinon.stub().resolves(fakeLogs),
+      };
+      const findStub = sinon.stub(AuditLog, 'find').returns(queryMock);
+
+      const logs = await AuditService.getLogsForBug(101, { sort: 'asc' });
+
+      expect(findStub.calledWith({ bugId: 101 })).to.be.true;
+      expect(queryMock.sort.calledWith({ timestamp: 1 })).to.be.true;
       expect(logs).to.deep.equal(fakeLogs);
     });
 

@@ -1,6 +1,10 @@
 const Bug = require('../models/Bug');
 const bugService = require('../services/bugService');
+const AuditedBugService = require('../services/AuditedBugService');
+const AuditService = require('../services/AuditService');
 const { BugServiceError } = bugService;
+
+const auditedBugService = new AuditedBugService();
 
 // Maps service error codes to HTTP status codes.
 const STATUS_BY_CODE = {
@@ -82,7 +86,7 @@ async function claimBug(req, res) {
   const assignee = req.authenticatedUser.username;
 
   try {
-    const updated = await bugService.claim(bugId, assignee);
+    const updated = await auditedBugService.claim(bugId, assignee);
     res.json({ success: true, message: `BUG-${bugId} claimed by ${assignee}.`,
       bug: { ...updated.toObject(), id: updated.ticketId } });
   } catch (err) {
@@ -96,7 +100,7 @@ async function resolveBug(req, res) {
   const developer = req.authenticatedUser.username;
 
   try {
-    const updated = await bugService.resolve(bugId, developer, resolutionType, resolutionNotes);
+    const updated = await auditedBugService.resolve(bugId, developer, resolutionType, resolutionNotes);
     res.json({ success: true, message: `BUG-${bugId} resolved by ${developer}.`,
       bug: { ...updated.toObject(), id: updated.ticketId } });
   } catch (err) {
@@ -110,7 +114,7 @@ async function verifyBug(req, res) {
   const qaUser = req.authenticatedUser.username;
 
   try {
-    const updated = await bugService.verify(bugId, qaUser, action, qaNotes);
+    const updated = await auditedBugService.verify(bugId, qaUser, action, qaNotes);
     res.json({ success: true, message: `BUG-${bugId} → ${updated.status}.`,
       bug: { ...updated.toObject(), id: updated.ticketId } });
   } catch (err) {
@@ -118,4 +122,20 @@ async function verifyBug(req, res) {
   }
 }
 
-module.exports = { createBug, getBugs, claimBug, resolveBug, verifyBug };
+async function getBugHistory(req, res) {
+  const bugId = parseInt(req.params.id, 10);
+  if (isNaN(bugId)) return res.status(404).json({ success: false, errors: ['Ticket not found.'] });
+
+  const bug = await Bug.findOne({ ticketId: bugId });
+  if (!bug) return res.status(404).json({ success: false, errors: ['Ticket not found.'] });
+
+  const logs = await AuditService.getLogsForBug(bugId, { sort: 'asc' });
+  const history = logs.map(entry => ({
+    ...entry,
+    id: entry.id || (entry._id ? entry._id.toString() : undefined),
+  }));
+
+  res.json({ success: true, count: history.length, history });
+}
+
+module.exports = { createBug, getBugs, claimBug, resolveBug, verifyBug, getBugHistory, auditedBugService };

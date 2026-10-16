@@ -1,13 +1,17 @@
 import StatusBadge from '../shared/StatusBadge';
 import SlaBadge from '../shared/SlaBadge';
 import { canDo } from '../shared/bugActions';
+import BugHistory from './BugHistory';
+import { useAuth } from '../../context/AuthContext';
 
 export default function BugCard({ bug, currentUser, onClaim, onResolve }) {
+  const { user } = useAuth();
+  const effectiveUser = currentUser || user;
   const id = bug.ticketId || bug.id;
-  const isDeveloper = currentUser?.role === 'Developer';
+  const isDeveloper = effectiveUser?.role === 'Developer';
   // Buttons are enabled only for the moves the bug's current status allows.
   const canClaim = canDo(bug.status, 'claim');
-  const canResolve = canDo(bug.status, 'resolve') && bug.assignee === currentUser?.username;
+  const canResolve = canDo(bug.status, 'resolve') && bug.assignee === effectiveUser?.username;
 
   return (
     <div className="bug-card">
@@ -48,6 +52,8 @@ export default function BugCard({ bug, currentUser, onClaim, onResolve }) {
         <span>Rep: <strong>{bug.reporter}</strong></span>
         <span>Dev: <strong>{bug.assignee || 'Unassigned'}</strong></span>
       </div>
+
+      <BugHistory bugId={id} currentUser={effectiveUser} />
 
       {isDeveloper && bug.status !== 'Closed' && (
         <div className="bug-card__actions bug-card__actions--split">
