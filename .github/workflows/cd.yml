@@ -1,0 +1,110 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+            chmod 600 ~/.ssh/known_hosts
+          fi
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          APP_DIR: ${{ secrets.EC2_APP_DIR }}
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -eu
+
+          STRICT_HOST_OPTION="StrictHostKeyChecking=yes"
+          if [ ! -f ~/.ssh/known_hosts ]; then
+            STRICT_HOST_OPTION="StrictHostKeyChecking=accept-new"
+          fi
+
+          # Support deploying to single host or multiple space/comma-separated hosts (e.g. NodeA and NodeB behind ALB)
+          for HOST in $(echo "$EC2_HOST" | tr ',' ' '); do
+            echo "===> Deploying to $HOST..."
+            ssh \
+              -i ~/.ssh/deploy_key \
+              -o BatchMode=yes \
+              -o "$STRICT_HOST_OPTION" \
+              "$EC2_USER@$HOST" \
+              "bash -l -s -- '$APP_DIR' '$DEPLOY_SHA'" <<'REMOTE'
+          set -eu
+
+          # Expand tilde if APP_DIR was passed as ~/path
+          APP_DIR="${1/#\~/$HOME}"
+          DEPLOY_SHA="$2"
+
+          # Load NVM and Node/npm/pm2 into PATH for non-interactive SSH sessions
+          export PATH="$PATH:/usr/local/bin:$HOME/.local/bin"
+          if [ -d "$HOME/.nvm" ]; then
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          elif [ -d "$HOME/.config/nvm" ]; then
+            export NVM_DIR="$HOME/.config/nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          fi
+
+          cd "$APP_DIR"
+
+          # Fetch the latest main branch.
+          git fetch origin main
+
+          # Only deploy the commit that passed CI (if sha provided),
+          # provided it is still the current main commit.
+          if [ -n "$DEPLOY_SHA" ]; then
+            test "$DEPLOY_SHA" = "$(git rev-parse origin/main)"
+          fi
+
+          git switch main
+          git pull --ff-only origin main
+
+          # Build Vite frontend.
+          cd "$APP_DIR/frontend"
+          npm ci
+          npm run build
+
+          # Install backend production dependencies.
+          cd "$APP_DIR/backend"
+          npm ci --omit=dev
+
+          # Restart both existing PM2 services and pick up any new environment variables.
+          pm2 restart backend --update-env
+          pm2 restart frontend --update-env
+
+          pm2 status
+          REMOTE
+          done
