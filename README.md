@@ -45,6 +45,8 @@ Tests use Mocha, Chai 4, Sinon and Supertest. Run them with `npm test` from `bac
 - One test file per feature in `backend/test/` (e.g. `verify.test.js`).
 - Stub models with Sinon instead of hitting MongoDB, and call `sinon.restore()` in `afterEach`.
 - For HTTP-level tests, import `src/app.js` into Supertest (never `server.js`).
+- `npm test` runs with `NODE_ENV=test` (set in `test/setup.js`). The write rate limiter is off there, except in `rateLimit.test.js`, and a model call you forgot to stub fails immediately instead of hanging.
+- `npm run test:report` also writes an HTML report to `backend/test-report/index.html` (not committed).
 
 ## Frontend Setup
 
