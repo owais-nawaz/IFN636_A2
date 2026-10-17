@@ -1,0 +1,1328 @@
+{
+  "info": {
+    "_postman_id": "6c1f2e8a-4b7d-4c39-9f0e-2a8d5b3c7e18",
+    "name": "Bug Tracking System A2",
+    "description": "Syed's hand-over for the master collection (Postman Shared Workspace Guide): folder **03 Notifications FR-2/NFR-2**. Avinandan: drag that folder into the master collection after 02 Audit. The 00 Auth folder here is only a copy so this file runs on its own; the master already has it.\n\n**Notifications (FR-2):** a fresh bug is reported, claimed, resolved and re-opened, checking who is notified at each step (claim → reporter; resolve → reporter and QA Leads; re-open → assigned developer), plus listing own notifications, mark read, and the 401/404 error cases.\n\n**Rate limit (NFR-2):** all POST, PATCH and PUT requests under /api are limited to **60 per minute per client IP**. Once the limit is reached the API returns 429 with { \"success\": false, \"errors\": [\"Too many requests, please try again in a minute.\"] }. GET requests are not limited. Behind the ALB the client IP comes from X-Forwarded-For (app.set('trust proxy', 1)). Counts are kept per server instance, so through the ALB (two instances) the effective limit is about 120 per minute: set the instances variable to 2 in the ALB environment.\n\nWait at least a minute between full runs: the rate-limit request uses up the limit for your IP, and the next run's logins would get 429.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Auth",
+      "description": "Copy of Avinandan's 00 Auth logins so this folder can run on its own. Don't merge this folder into the master.",
+      "item": [
+        {
+          "name": "AUTH | Login as Tester → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"AUTH: login returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: token is returned\", () => {",
+                  "  pm.expect(res.token).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"testerToken\", res.token);",
+                  "",
+                  "pm.test(\"AUTH: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in the seeded Tester (tester_sarah) and saves the JWT to testerToken. Copy of Avinandan's 00 Auth request so this folder can run on its own.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tester_sarah\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AUTH | Login as Developer → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"AUTH: login returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: token is returned\", () => {",
+                  "  pm.expect(res.token).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"devToken\", res.token);",
+                  "",
+                  "pm.test(\"AUTH: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in the seeded Developer (dev_alex) and saves the JWT to devToken. Copy of Avinandan's 00 Auth request so this folder can run on its own.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"dev_alex\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AUTH | Login as QA Lead → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"AUTH: login returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: token is returned\", () => {",
+                  "  pm.expect(res.token).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"qaToken\", res.token);",
+                  "",
+                  "pm.test(\"AUTH: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in the seeded QA Lead (qa_lead) and saves the JWT to qaToken. Copy of Avinandan's 00 Auth request so this folder can run on its own.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"qa_lead\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Notifications FR-2/NFR-2",
+      "description": "Notifications (FR-2, Jira BTS2-8 / BTS2-33) and the write rate limit (NFR-2, Jira BTS2-9 / BTS2-37). Owner: Syed. Run after 00 Auth.",
+      "item": [
+        {
+          "name": "FR-2 | POST create bug for the notification check (Tester) → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: bug created (201)\", () => {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.environment.set(\"bugId\", res.bug.id);",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs"
+              ]
+            },
+            "description": "Setup: tester_sarah reports a fresh bug and saves its id to bugId, so the steps below can check who is notified. Tester or QA Lead only.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman notifications check\",\n  \"module\": \"Notifications\",\n  \"severity\": \"Medium\",\n  \"priority\": \"Medium\",\n  \"description\": \"Created by the 03 Notifications Postman folder to check notification recipients.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH claim bug (Developer) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: claim returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "claim"
+              ]
+            },
+            "description": "dev_alex claims the bug (Open → In Progress). Under FR-2 this must notify the reporter. Developer only.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET my notifications after claim (Tester) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only tester_sarah's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"tester_sarah\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"claimed by dev_alex\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 'claimed by dev_alex' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "if (match) pm.environment.set(\"notificationId\", match._id);",
+                  "",
+                  "pm.test(\"FR-2: unread count is returned\", () => {",
+                  "  pm.expect(res.unread).to.be.a(\"number\").and.to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "Lists the logged-in user's own notifications (newest 50, with an unread count). After the claim, the reporter tester_sarah has an unread 'claimed by dev_alex' notification; its id is saved to notificationId. Any logged-in role.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK: own notifications with unread count",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"count\": 1,\n  \"unread\": 1,\n  \"notifications\": [\n    {\n      \"_id\": \"6ad2be22153101de785bda6c\",\n      \"recipient\": \"tester_sarah\",\n      \"bugId\": 101,\n      \"eventType\": \"bug.claimed\",\n      \"message\": \"BUG-101 was claimed by dev_alex.\",\n      \"read\": false,\n      \"timestamp\": \"2026-10-17T00:15:30.376Z\",\n      \"__v\": 0\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "FR-2 | GET notifications without token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 401\", () => {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Authentication required.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "Error case: listing notifications without logging in is rejected. No auth.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH mark own notification read (Tester) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: notification is now read\", () => {",
+                  "  pm.expect(res.notification.read).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "tester_sarah marks her own claim notification as read. Any logged-in role, own notifications only.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH someone else's notification (Developer) → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 404\", () => {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "Error case: dev_alex tries to mark tester_sarah's notification. It gets the same 404 as an unknown id, so users can't probe which ids exist.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "404: someone else's notification",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "{{notificationId}}",
+                    "read"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Notification not found.\"\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "FR-2 | PATCH unknown notification → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 404\", () => {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/670a000100000000000000ff/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "670a000100000000000000ff",
+                "read"
+              ]
+            },
+            "description": "Error case: a well-formed id that does not exist.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH malformed notification id → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 404\", () => {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/not-an-id/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "not-an-id",
+                "read"
+              ]
+            },
+            "description": "Error case: an id that is not a valid MongoDB ObjectId returns 404 without querying the database.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH mark read without token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 401\", () => {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Authentication required.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "Error case: marking a notification read without logging in. No auth.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH resolve bug (Developer) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: resolve returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "resolve"
+              ]
+            },
+            "description": "dev_alex resolves the bug (In Progress → Resolved). Under FR-2 this must notify the reporter and all QA Leads. Developer only.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolutionType\": \"Code Fix\",\n  \"resolutionNotes\": \"Fixed during the Postman notifications check.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET QA Lead notifications after resolve → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only qa_lead's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"qa_lead\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"resolved by dev_alex\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 'resolved by dev_alex' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "After the resolve, qa_lead has an unread 'resolved by dev_alex' notification.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qaToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET reporter notifications after resolve → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only tester_sarah's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"tester_sarah\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"resolved by dev_alex\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 'resolved by dev_alex' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "After the resolve, the reporter tester_sarah also has an unread 'resolved by dev_alex' notification.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH re-open bug (QA Lead) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: re-open returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "verify"
+              ]
+            },
+            "description": "qa_lead re-opens the bug (Resolved → Re-opened). Under FR-2 this must notify the assigned developer. QA Lead only.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"reopen\",\n  \"qaNotes\": \"Still fails in the Postman check.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET developer notifications after re-open → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only dev_alex's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"dev_alex\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"re-opened by qa_lead\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 're-opened by qa_lead' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "After the re-open, the assigned developer dev_alex has an unread 're-opened by qa_lead' notification.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "NFR-2 | POST writes until rate limited → 429",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const n = Number(pm.variables.get(\"rlCount\") || 0) + 1;",
+                  "pm.variables.set(\"rlCount\", n);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const n = Number(pm.variables.get(\"rlCount\"));",
+                  "const instances = Number(pm.environment.get(\"instances\") || 1);",
+                  "const max = 60 * instances + 5;",
+                  "",
+                  "if (pm.response.code === 401) {",
+                  "  // Under the limit: auth rejected it, so the limiter let it through.",
+                  "  pm.test(\"NFR-2: write #\" + n + \" is under the limit (401 from auth, not 429)\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "  });",
+                  "  if (n === 1) {",
+                  "    pm.test(\"NFR-2: policy header says 60 per minute\", () => {",
+                  "      pm.expect(pm.response.headers.get(\"RateLimit-Policy\")).to.include(\"60-in-1min\");",
+                  "    });",
+                  "  }",
+                  "  if (n < max) pm.execution.setNextRequest(pm.info.requestName);",
+                  "  else pm.test(\"NFR-2: limit reached within \" + max + \" writes\", () => pm.expect.fail(\"no 429 after \" + n + \" writes\"));",
+                  "} else {",
+                  "  pm.variables.set(\"rlCount\", 0);",
+                  "  pm.test(\"NFR-2: write #\" + n + \" in this burst returns 429\", () => {",
+                  "    pm.response.to.have.status(429);",
+                  "  });",
+                  "  pm.test(\"NFR-2: 429 body uses the agreed message\", () => {",
+                  "    pm.expect(pm.response.json()).to.eql({ success: false, errors: [\"Too many requests, please try again in a minute.\"] });",
+                  "  });",
+                  "  pm.test(\"NFR-2: no more than 60 writes per instance were allowed\", () => {",
+                  "    pm.expect(n - 1).to.be.at.most(60 * instances);",
+                  "  });",
+                  "  ",
+                  "  pm.test(\"NFR-2: Content-Type is present\", () => {",
+                  "    pm.response.to.have.header(\"Content-Type\");",
+                  "  });",
+                  "  ",
+                  "  pm.test(\"NFR-2: responds within 1000 ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs"
+              ]
+            },
+            "description": "Rate limit (NFR-2): POST, PATCH and PUT under /api are limited to 60 per minute per client IP. This request repeats itself (no auth, so each write is rejected with 401 but still counted) until the 429 arrives with \"Too many requests, please try again in a minute.\". Earlier writes in the run count toward the 60. Set instances = 2 when running through the ALB, because each instance counts separately. Run this last and wait a minute before the next run.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "429: write limit reached",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Too many requests, please try again in a minute.\"\n  ]\n}"
+            },
+            {
+              "name": "401: under the limit (reached auth)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Authentication required.\"\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "NFR-2 | GET bugs after the write limit → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"NFR-2: GET /api/bugs still returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"NFR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"NFR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs"
+              ]
+            },
+            "description": "Reads are not rate limited: GET /api/bugs still works right after the write limit is reached.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
