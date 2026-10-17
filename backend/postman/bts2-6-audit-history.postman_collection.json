@@ -1,13 +1,13 @@
 {
   "info": {
     "_postman_id": "c4d7e9a2-6f1b-4c8d-b3e5-7a9c1d3e5f7b",
-    "name": "Bug Tracker - Audit History (BTS2-6, FR-1)",
-    "description": "Tests for GET /api/bugs/:id/history (FR-1 / BTS2-6). Run the Auth folder first: it saves the JWTs into qaToken, devToken and testerToken. Then run the Audit History folder which reports dummy bug data and validates 200 (oldest-first order), 401 (missing/invalid token), and 404 (non-existent/non-numeric IDs).",
+    "name": "Bug Tracker - Audit History (BTS2-6, FR-1/NFR-1)",
+    "description": "Saroj's hand-over for the master collection: folder 02 Audit FR-1/NFR-1 (Saroj). The 00 Auth folder is included for standalone runs; when merging into the master collection, drag folder 02 Audit FR-1/NFR-1 (Saroj) after 01.\n\nTests for GET /api/bugs/:id/history (FR-1 / NFR-1): success (200 with oldest-first order and role access for Tester, Developer, QA Lead), 401 without token or invalid token, and 404 for non-existent or non-numeric IDs.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Auth",
+      "name": "00 Auth",
       "item": [
         {
           "name": "Auth: log in as qa_lead",
@@ -165,161 +165,13 @@
           },
           "response": []
         }
-      ]
+      ],
+      "description": "Log in as QA Lead, Developer, and Tester to save JWTs into qaToken, devToken, and testerToken environment variables."
     },
     {
-      "name": "Audit History (BTS2-6, FR-1)",
-      "description": "Requests for GET /api/bugs/:id/history (BTS2-6, FR-1): success (200 with oldest-first order and role access), 401 without token or invalid token, and 404 for unknown or non-numeric IDs.",
+      "name": "02 Audit FR-1/NFR-1 (Saroj)",
+      "description": "Requests for GET /api/bugs/:id/history (BTS2-6, FR-1 / NFR-1): success (200 with oldest-first order and role access for Tester, Developer, QA Lead), 401 without token or invalid token, and 404 for non-existent or non-numeric IDs.",
       "item": [
-        {
-          "name": "Setup: create dummy bug for history testing",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"bug created with 201\", function () {",
-                  "  pm.response.to.have.status(201);",
-                  "});",
-                  "",
-                  "pm.test(\"bug ticketId saved to bugId\", function () {",
-                  "  const bug = pm.response.json().bug;",
-                  "  const id = bug.ticketId || bug.id;",
-                  "  pm.expect(id).to.be.a(\"number\");",
-                  "  pm.environment.set(\"bugId\", id);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{testerToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Dummy bug for audit history testing\",\n  \"module\": \"Testing\",\n  \"severity\": \"Medium\",\n  \"priority\": \"Medium\",\n  \"description\": \"Dummy bug created to test GET /api/bugs/:id/history audit trail.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/bugs",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "bugs"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Setup: claim bug (generates claim audit entry)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"claimed with 200\", function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{devToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "bugs",
-                "{{bugId}}",
-                "claim"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Setup: resolve bug (generates resolve audit entry)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"resolved with 200\", function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{devToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"resolutionType\": \"Code Fix\",\n  \"resolutionNotes\": \"Resolved dummy bug for history verification in Postman.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/resolve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "bugs",
-                "{{bugId}}",
-                "resolve"
-              ]
-            }
-          },
-          "response": []
-        },
         {
           "name": "FR-1 (200): get history as Tester (success, oldest first)",
           "event": [
