@@ -1,11 +1,17 @@
 const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 
-// GET /api/notifications: the logged-in user's own notifications, newest first.
+const LIST_LIMIT = 50;
+
+// GET /api/notifications: the logged-in user's latest notifications, newest
+// first. The unread count is taken from the database, so it stays right even
+// when there are more notifications than the list shows.
 async function getNotifications(req, res) {
   const recipient = req.authenticatedUser.username;
-  const notifications = await Notification.find({ recipient }).sort({ timestamp: -1 }).lean();
-  const unread = notifications.filter(n => !n.read).length;
+  const [notifications, unread] = await Promise.all([
+    Notification.find({ recipient }).sort({ timestamp: -1 }).limit(LIST_LIMIT).lean(),
+    Notification.countDocuments({ recipient, read: false }),
+  ]);
   res.json({ success: true, count: notifications.length, unread, notifications });
 }
 

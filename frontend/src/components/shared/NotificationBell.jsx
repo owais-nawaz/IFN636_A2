@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { notificationsApi } from '../../api/client';
 
 const POLL_MS = 30000;
@@ -31,6 +31,20 @@ export default function NotificationBell({ user, refreshTrigger }) {
     return () => clearInterval(t);
   }, [load, refreshTrigger]);
 
+  // Close the panel on a click outside the bell or on Esc.
+  const rootRef = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onClick = e => { if (!rootRef.current?.contains(e.target)) setOpen(false); };
+    const onKey = e => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
   async function handleMarkRead(n) {
     if (n.read) return;
     try {
@@ -41,7 +55,7 @@ export default function NotificationBell({ user, refreshTrigger }) {
   }
 
   return (
-    <div className="bts-bell">
+    <div className="bts-bell" ref={rootRef}>
       <button className="bts-bell__button" onClick={() => setOpen(o => !o)}
         aria-label={`Notifications, ${unread} unread`} aria-expanded={open}>
         <span className="material-icons">notifications</span>
