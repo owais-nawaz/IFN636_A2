@@ -26,17 +26,7 @@ function AppContent() {
     const id = bug.ticketId || bug.id;
     try {
       await bugsApi.claim(id, user);
-      notify('BUG-${id} claimed! Status changed to In Progress', 'success');
-      setRefreshTrigger(r => r + 1);
-    } catch (err) { notify(err.message, 'error'); }
-  }
-
-  async function handleVerify(bug, action, qaNotes) {
-    const id = bug.ticketId || bug.id;
-    try {
-      await bugsApi.verify(id, { action, qaNotes }, user);
-      notify(action === 'close' ? 'BUG-${id} verified and Closed' : `BUG-${id} re-opened 🔄`,
-        action === 'close' ? 'success' : 'info');
+      notify(`BUG-${id} claimed! Status changed to In Progress`, 'success');
       setRefreshTrigger(r => r + 1);
     } catch (err) { notify(err.message, 'error'); }
   }
