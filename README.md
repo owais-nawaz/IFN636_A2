@@ -42,7 +42,7 @@ Assessment 1 (v1.0.0) delivered the core workflow. **Assessment 2** adds an audi
 |---|---|---|
 | FR-1 | Every status change (claim, resolve, close, re-open) is recorded with who, what, old and new value and when. `GET /api/bugs/:id/history` returns a bug's history, oldest first. | BTS2-6 |
 | NFR-1 | Audit entries cannot be modified after they are written, and history queries use the `{ bugId, timestamp }` index. | BTS2-7 |
-| FR-2 | Users are notified of changes to bugs they are involved in: the reporter on claim; the reporter and all QA Leads on resolve; the assigned developer on re-open. Notifications appear in the navbar bell and can be marked read. A console email notifier receives the same events. | BTS2-8 |
+| FR-2 | Users are notified of changes to bugs they are involved in: the reporter on claim; the reporter and all QA Leads on resolve; the assigned developer on re-open. Notifications appear in the navbar bell and can be marked read. The same events are emailed through Gmail when it is configured (otherwise the email is written to the server log). | BTS2-8 |
 | NFR-2 | Write requests (POST, PATCH, PUT) under `/api` are limited to 60 per minute per client IP; the 61st returns `429`. | BTS2-9 |
 | FR-3 | QA Leads can see summary metrics and export all bugs as CSV or JSON. | BTS2-10 |
 | NFR-3 | Exports complete quickly for the full bug list, and CSV cells that start with `=`, `+`, `-` or `@` are neutralised so spreadsheets don't run them as formulas. | BTS2-11 |
@@ -108,6 +108,8 @@ MONGO_URL=your_mongodb_atlas_connection_string
 JWT_SECRET=a_long_random_secret_string
 PORT=3000
 INSTANCE_NAME=local          # optional; shown by /api/health
+GMAIL_USER=team.address@gmail.com   # optional; without these two, emails are logged instead of sent
+GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx  # a Gmail app password (needs 2-Step Verification), not the account password
 ```
 
 Run the server:
@@ -192,7 +194,7 @@ Each response names the instance that served it (`INSTANCE_NAME` in that server'
 - Tokens expire after 2 hours.
 - Write requests (POST, PATCH, PUT) under `/api` are limited to **60 per minute per client IP**; the 61st returns `429 Too many requests`. Reads are not limited. Counts are kept per server instance, so with two instances behind the ALB the effective limit is about 120 per minute. The app trusts one proxy hop (`trust proxy` = 1) to read the client IP from the ALB's `X-Forwarded-For` header, so the instances should accept app traffic only from the ALB.
 - CSV exports neutralise formula-like cells (NFR-3).
-- Secrets live in `.env` files and GitHub repository secrets, never in the repository.
+- Secrets (database URL, JWT secret, Gmail app password) live in `.env` files and GitHub repository secrets, never in the repository. Tests clear the Gmail variables, so they never send real email.
 
 ## Releases
 
