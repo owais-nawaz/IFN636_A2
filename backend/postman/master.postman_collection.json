@@ -1486,18 +1486,13 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{auth_secret_0gy4}}",
+                  "value": "not-a-real-token",
                   "type": "string"
                 }
               ]
             },
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "{{bearer_token_0vh4}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/bugs/{{bugId}}/history",
               "host": [
@@ -4594,20 +4589,6 @@
         "exec": [
           ""
         ]
-      }
-    }
-  ],
-  "variable": [
-    {
-      "key": "auth_secret_0gy4",
-      "secret": true,
-      "source": {
-        "provider": "postman",
-        "postman": {
-          "type": "cloud",
-          "secretId": "cdecb4ae-aa64-4314-951d-ddf5e4b97ad5",
-          "vaultId": "e00a1e21-2eb4-4fe2-9b7c-6a9beb2898d2"
-        }
       }
     }
   ]
