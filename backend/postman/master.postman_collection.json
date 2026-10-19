@@ -1,0 +1,4614 @@
+{
+  "info": {
+    "_postman_id": "d58334f7-002e-4630-b9d7-29f3f5192621",
+    "name": "BTS2 Bug Tracker API",
+    "description": "Master API collection for the IFN636 Assessment 2 Bug Tracking System. Run the folders in order: 00 Auth saves the tokens the other folders use, and 01 Workflow creates the bug (bugId) later requests act on. Select the Local, EC2 or ALB environment first; every URL starts with {{baseUrl}}. Requests are named | → and each has a status, Content-Type and response-time test. Write requests (POST, PATCH, PUT) are limited to 60 per minute per IP, so wait a minute between full runs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58621042",
+    "_collection_link": "https://go.postman.co/collection/58621042-d58334f7-002e-4630-b9d7-29f3f5192621?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "00 Auth (Avinandan)",
+      "item": [
+        {
+          "name": "AUTH | Login as QA Lead → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"AUTH: login returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: token is returned\", () => {",
+                  "  pm.expect(res.token).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"qaToken\", res.token);",
+                  "",
+                  "pm.test(\"AUTH: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"qa_lead\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "AUTH | Login as QA Lead → 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"qa_lead\",\n     \"password\": \"<demo password from seed.js>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "code": 200,
+              "_postman_previewlanguage": "",
+              "header": [],
+              "cookie": [
+                {
+                  "expires": "Invalid Date",
+                  "domain": "",
+                  "path": ""
+                }
+              ],
+              "body": "{\r\n    \"success\": true,\r\n    \"message\": \"Welcome back, qa_lead!\",\r\n    \"user\": {\r\n        \"username\": \"qa_lead\",\r\n        \"email\": \"lead@qut.edu.au\",\r\n        \"role\": \"QALead\"\r\n    },\r\n       \"token\": \"<JWT redacted – issued at login, expires in 2h>\"\r\n}"
+            }
+          ]
+        },
+        {
+          "name": "AUTH | Login wrong password → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"AUTH: wrong password returns 401\", () => {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: no token returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.token).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.be.an(\"array\").that.is.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"username\": \"qa_lead\", \"password\": \"wrongpass123\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "401 Invalid credentials",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"username\": \"qa_lead\", \"password\": \"wrongpass123\" }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "RateLimit",
+                  "value": "\"60-in-1min\"; r=59; t=60"
+                },
+                {
+                  "key": "RateLimit-Policy",
+                  "value": "\"60-in-1min\"; q=60; w=60; pk=:YmIwY2Q1MTM2YWU1:"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "60"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"3c-EwMV75qVkKvOgQCwUETm5JhjNiI\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Sat, 17 Oct 2026 07:57:28 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"success\": false,\n    \"errors\": [\n        \"Invalid username or password.\"\n    ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "AUTH | Login missing fields → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"AUTH: missing fields returns 400\", () => {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.be.an(\"array\").that.is.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"username\": \"qa_lead\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "400 Missing fields",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"username\": \"qa_lead\" }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "RateLimit",
+                  "value": "\"60-in-1min\"; r=58; t=52"
+                },
+                {
+                  "key": "RateLimit-Policy",
+                  "value": "\"60-in-1min\"; q=60; w=60; pk=:YmIwY2Q1MTM2YWU1:"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "66"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"42-9gSC7rGYZ32E++1i4MpTYhm/ejA\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Sat, 17 Oct 2026 07:57:37 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"success\": false,\n    \"errors\": [\n        \"Username and password are required.\"\n    ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "AUTH | Login as Developer → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"AUTH: login returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: token is returned\", () => {",
+                  "  pm.expect(res.token).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"devToken\", res.token);",
+                  "",
+                  "pm.test(\"AUTH: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"dev_alex\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AUTH | Login as Tester → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"AUTH: login returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: token is returned\", () => {",
+                  "  pm.expect(res.token).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"testerToken\", res.token);",
+                  "",
+                  "pm.test(\"AUTH: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"AUTH: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tester_sarah\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 Workflow FR-4a/4b (Alvin)",
+      "item": [
+        {
+          "name": "Invalid transitions return 409 (BTS2-12)",
+          "item": [
+            {
+              "name": "Setup: tester reports a bug (Open)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test('bug id saved to bugId', function () {",
+                      "  const id = pm.response.json().bug.id;",
+                      "  pm.expect(id).to.be.a('number');",
+                      "  pm.environment.set('bugId', id);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{testerToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Postman 409 check (safe to ignore)\",\n  \"module\": \"Testing\",\n  \"severity\": \"Low\",\n  \"priority\": \"Low\",\n  \"description\": \"Created by the BTS2-13 Postman collection to test invalid moves.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "409: resolve an Open bug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 409 Conflict', function () {",
+                      "  pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('error says the move is not allowed', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(false);",
+                      "  pm.expect(res.errors[0]).to.include(\"Cannot resolve a bug that is Open\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{devToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resolutionType\": \"Code Fix\",\n  \"resolutionNotes\": \"Should be rejected.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/resolve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "resolve"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "409: close an Open bug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 409 Conflict', function () {",
+                      "  pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('error says the move is not allowed', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(false);",
+                      "  pm.expect(res.errors[0]).to.include(\"Cannot close a bug that is Open\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{qaToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"close\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "verify"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step: developer claims (In Progress)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('bug is now In Progress', function () {",
+                      "  pm.expect(pm.response.json().bug.status).to.equal('In Progress');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{devToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "claim"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "409: claim an In Progress bug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 409 Conflict', function () {",
+                      "  pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('error says the move is not allowed', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(false);",
+                      "  pm.expect(res.errors[0]).to.include(\"Cannot claim a bug that is In Progress\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{devToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "claim"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "409: re-open an In Progress bug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 409 Conflict', function () {",
+                      "  pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('error says the move is not allowed', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(false);",
+                      "  pm.expect(res.errors[0]).to.include(\"Cannot reopen a bug that is In Progress\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{qaToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"reopen\",\n  \"qaNotes\": \"Should be rejected.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "verify"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step: developer resolves (Resolved)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('bug is now Resolved', function () {",
+                      "  pm.expect(pm.response.json().bug.status).to.equal('Resolved');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{devToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resolutionType\": \"Code Fix\",\n  \"resolutionNotes\": \"Fixed for the Postman check.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/resolve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "resolve"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "409: claim a Resolved bug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 409 Conflict', function () {",
+                      "  pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('error says the move is not allowed', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(false);",
+                      "  pm.expect(res.errors[0]).to.include(\"Cannot claim a bug that is Resolved\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{devToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "claim"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step: QA Lead closes (Closed)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('bug is now Closed', function () {",
+                      "  pm.expect(pm.response.json().bug.status).to.equal('Closed');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{qaToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"close\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "verify"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "409: re-open a Closed bug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 409 Conflict', function () {",
+                      "  pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('error says the move is not allowed', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(false);",
+                      "  pm.expect(res.errors[0]).to.include(\"Cannot reopen a bug that is Closed\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{qaToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"reopen\",\n  \"qaNotes\": \"Should be rejected.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "verify"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "409: claim a Closed bug",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 409 Conflict', function () {",
+                      "  pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test('error says the move is not allowed', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(false);",
+                      "  pm.expect(res.errors[0]).to.include(\"Cannot claim a bug that is Closed\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{devToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "claim"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "SLA escalation (BTS2-13)",
+          "item": [
+            {
+              "name": "SLA run: no token (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 401', function () {",
+                      "  pm.response.to.have.status(401);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/sla/run",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sla",
+                    "run"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "SLA run: as Developer (403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 403', function () {",
+                      "  pm.response.to.have.status(403);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{devToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/sla/run",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sla",
+                    "run"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "SLA run: as Tester (403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 403', function () {",
+                      "  pm.response.to.have.status(403);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{testerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/sla/run",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sla",
+                    "run"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "SLA run: as QA Lead (200)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('returns 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('reports how many bugs were checked and escalated', function () {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.equal(true);",
+                      "  pm.expect(res.checked).to.be.a('number');",
+                      "  pm.expect(res.escalated).to.be.an('array');",
+                      "});",
+                      "",
+                      "pm.test('a second run straight away escalates nothing new', function () {",
+                      "  pm.sendRequest({ url: pm.environment.get('baseUrl') + '/api/sla/run', method: 'POST',",
+                      "    header: { Authorization: 'Bearer ' + pm.environment.get('qaToken') } }, function (err, res) {",
+                      "    pm.expect(err).to.equal(null);",
+                      "    pm.expect(res.json().escalated).to.have.length(0);",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{qaToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/sla/run",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sla",
+                    "run"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Bug workflow state machine (FR-4a) and SLA escalation (FR-4b). Creates a bug as the Tester and saves it to bugId, then walks it through claim → resolve → close, checking that invalid moves (e.g. resolving an Open bug, acting on a Closed bug) return 409. FR-4b: POST /api/sla/run is QA Lead only (200), with 403 for other roles and 401 without a token."
+    },
+    {
+      "name": "02 Audit FR-1/NFR-1 (Saroj)",
+      "item": [
+        {
+          "name": "FR-1 (200): get history as Tester (success, oldest first)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns 200 OK\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response indicates success and returns history array\", function () {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.count).to.be.a(\"number\");",
+                  "  pm.expect(res.history).to.be.an(\"array\");",
+                  "});",
+                  "",
+                  "pm.test(\"history entries have required fields\", function () {",
+                  "  const history = pm.response.json().history;",
+                  "  if (history.length > 0) {",
+                  "    const entry = history[0];",
+                  "    pm.expect(entry).to.have.property(\"bugId\");",
+                  "    pm.expect(entry).to.have.property(\"action\");",
+                  "    pm.expect(entry).to.have.property(\"timestamp\");",
+                  "  }",
+                  "});",
+                  "",
+                  "pm.test(\"entries are ordered oldest first\", function () {",
+                  "  const history = pm.response.json().history;",
+                  "  if (history.length >= 2) {",
+                  "    const first = new Date(history[0].timestamp).getTime();",
+                  "    const last = new Date(history[history.length - 1].timestamp).getTime();",
+                  "    pm.expect(first).to.be.at.most(last);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{testerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-1 (200): get history as Developer (success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns 200 OK for Developer\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has success: true\", function () {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.history).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{devToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-1 (200): get history as QA Lead (success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns 200 OK for QA Lead\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has success: true\", function () {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.history).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qaToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-1 (401): get history without token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns 401 Unauthorized\", function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"error indicates authentication required\", function () {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.false;",
+                  "  pm.expect(res.errors).to.include(\"Authentication required.\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-1 (401): get history with invalid token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"returns 401 Unauthorized for invalid token\", function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"error indicates invalid session\", function () {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.false;",
+                  "  pm.expect(res.errors[0]).to.include(\"Invalid or expired session\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_secret_0gy4}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{bearer_token_0vh4}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-1 (404): get history for non-existent ticket (999999)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns 404 Not Found\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"error indicates ticket not found\", function () {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.false;",
+                  "  pm.expect(res.errors).to.include(\"Ticket not found.\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{testerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/999999/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "999999",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "FR-1 (404): get history for non-numeric ticket id (invalid-id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"returns 404 Not Found\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"error indicates ticket not found\", function () {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.false;",
+                  "  pm.expect(res.errors).to.include(\"Ticket not found.\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{testerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/invalid-id/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "invalid-id",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Requests for GET /api/bugs/:id/history (BTS2-6, FR-1 / NFR-1): success (200 with oldest-first order and role access for Tester, Developer, QA Lead), 401 without token or invalid token, and 404 for non-existent or non-numeric IDs."
+    },
+    {
+      "name": "03 Notifications FR-2/NFR-2 (Syed)",
+      "item": [
+        {
+          "name": "03 Notifications FR-2/NFR-2",
+          "item": [
+            {
+              "name": "FR-2 | POST create bug for the notification check (Tester) → 201",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "",
+                      "pm.test(\"FR-2: bug created (201)\", () => {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.environment.set(\"bugId\", res.bug.id);",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Postman notifications check\",\n  \"module\": \"Notifications\",\n  \"severity\": \"Medium\",\n  \"priority\": \"Medium\",\n  \"description\": \"Created by the 03 Notifications Postman folder to check notification recipients.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                },
+                "description": "Setup: tester_sarah reports a fresh bug and saves its id to bugId, so the steps below can check who is notified. Tester or QA Lead only."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | PATCH claim bug (Developer) → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: claim returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{devToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "claim"
+                  ]
+                },
+                "description": "dev_alex claims the bug (Open → In Progress). Under FR-2 this must notify the reporter. Developer only."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | GET my notifications after claim (Tester) → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "",
+                      "pm.test(\"FR-2: returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: lists only tester_sarah's own notifications\", () => {",
+                      "  pm.expect(res.success).to.eql(true);",
+                      "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"tester_sarah\"));",
+                      "});",
+                      "",
+                      "const bugId = Number(pm.environment.get(\"bugId\"));",
+                      "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"claimed by dev_alex\"));",
+                      "",
+                      "pm.test(\"FR-2: has the 'claimed by dev_alex' notification for BUG-\" + bugId, () => {",
+                      "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                      "  pm.expect(match.read).to.eql(false);",
+                      "});",
+                      "",
+                      "if (match) pm.environment.set(\"notificationId\", match._id);",
+                      "",
+                      "pm.test(\"FR-2: unread count is returned\", () => {",
+                      "  pm.expect(res.unread).to.be.a(\"number\").and.to.be.at.least(1);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                },
+                "description": "Lists the logged-in user's own notifications (newest 50, with an unread count). After the claim, the reporter tester_sarah has an unread 'claimed by dev_alex' notification; its id is saved to notificationId. Any logged-in role."
+              },
+              "response": [
+                {
+                  "name": "200 OK: own notifications with unread count",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/notifications",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "notifications"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"count\": 1,\n  \"unread\": 1,\n  \"notifications\": [\n    {\n      \"_id\": \"6ad2be22153101de785bda6c\",\n      \"recipient\": \"tester_sarah\",\n      \"bugId\": 101,\n      \"eventType\": \"bug.claimed\",\n      \"message\": \"BUG-101 was claimed by dev_alex.\",\n      \"read\": false,\n      \"timestamp\": \"2026-10-17T00:15:30.376Z\",\n      \"__v\": 0\n    }\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "FR-2 | GET notifications without token → 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: returns 401\", () => {",
+                      "  pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: error message returned\", () => {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.eql(false);",
+                      "  pm.expect(res.errors).to.include(\"Authentication required.\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                },
+                "description": "Error case: listing notifications without logging in is rejected. No auth."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | PATCH mark own notification read (Tester) → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "",
+                      "pm.test(\"FR-2: returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: notification is now read\", () => {",
+                      "  pm.expect(res.notification.read).to.eql(true);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "{{notificationId}}",
+                    "read"
+                  ]
+                },
+                "description": "tester_sarah marks her own claim notification as read. Any logged-in role, own notifications only."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | PATCH someone else's notification (Developer) → 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: returns 404\", () => {",
+                      "  pm.response.to.have.status(404);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: error message returned\", () => {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.eql(false);",
+                      "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{devToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "{{notificationId}}",
+                    "read"
+                  ]
+                },
+                "description": "Error case: dev_alex tries to mark tester_sarah's notification. It gets the same 404 as an unknown id, so users can't probe which ids exist."
+              },
+              "response": [
+                {
+                  "name": "404: someone else's notification",
+                  "originalRequest": {
+                    "method": "PATCH",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "notifications",
+                        "{{notificationId}}",
+                        "read"
+                      ]
+                    }
+                  },
+                  "status": "Not Found",
+                  "code": 404,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Notification not found.\"\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "FR-2 | PATCH unknown notification → 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: returns 404\", () => {",
+                      "  pm.response.to.have.status(404);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: error message returned\", () => {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.eql(false);",
+                      "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/670a000100000000000000ff/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "670a000100000000000000ff",
+                    "read"
+                  ]
+                },
+                "description": "Error case: a well-formed id that does not exist."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | PATCH malformed notification id → 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: returns 404\", () => {",
+                      "  pm.response.to.have.status(404);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: error message returned\", () => {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.eql(false);",
+                      "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/not-an-id/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "not-an-id",
+                    "read"
+                  ]
+                },
+                "description": "Error case: an id that is not a valid MongoDB ObjectId returns 404 without querying the database."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | PATCH mark read without token → 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: returns 401\", () => {",
+                      "  pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: error message returned\", () => {",
+                      "  const res = pm.response.json();",
+                      "  pm.expect(res.success).to.eql(false);",
+                      "  pm.expect(res.errors).to.include(\"Authentication required.\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "{{notificationId}}",
+                    "read"
+                  ]
+                },
+                "description": "Error case: marking a notification read without logging in. No auth."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | PATCH resolve bug (Developer) → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: resolve returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{devToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resolutionType\": \"Code Fix\",\n  \"resolutionNotes\": \"Fixed during the Postman notifications check.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/resolve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "resolve"
+                  ]
+                },
+                "description": "dev_alex resolves the bug (In Progress → Resolved). Under FR-2 this must notify the reporter and all QA Leads. Developer only."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | GET QA Lead notifications after resolve → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "",
+                      "pm.test(\"FR-2: returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: lists only qa_lead's own notifications\", () => {",
+                      "  pm.expect(res.success).to.eql(true);",
+                      "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"qa_lead\"));",
+                      "});",
+                      "",
+                      "const bugId = Number(pm.environment.get(\"bugId\"));",
+                      "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"resolved by dev_alex\"));",
+                      "",
+                      "pm.test(\"FR-2: has the 'resolved by dev_alex' notification for BUG-\" + bugId, () => {",
+                      "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                      "  pm.expect(match.read).to.eql(false);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{qaToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                },
+                "description": "After the resolve, qa_lead has an unread 'resolved by dev_alex' notification."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | GET reporter notifications after resolve → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "",
+                      "pm.test(\"FR-2: returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: lists only tester_sarah's own notifications\", () => {",
+                      "  pm.expect(res.success).to.eql(true);",
+                      "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"tester_sarah\"));",
+                      "});",
+                      "",
+                      "const bugId = Number(pm.environment.get(\"bugId\"));",
+                      "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"resolved by dev_alex\"));",
+                      "",
+                      "pm.test(\"FR-2: has the 'resolved by dev_alex' notification for BUG-\" + bugId, () => {",
+                      "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                      "  pm.expect(match.read).to.eql(false);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                },
+                "description": "After the resolve, the reporter tester_sarah also has an unread 'resolved by dev_alex' notification."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | PATCH re-open bug (QA Lead) → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"FR-2: re-open returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{qaToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"reopen\",\n  \"qaNotes\": \"Still fails in the Postman check.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs/{{bugId}}/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs",
+                    "{{bugId}}",
+                    "verify"
+                  ]
+                },
+                "description": "qa_lead re-opens the bug (Resolved → Re-opened). Under FR-2 this must notify the assigned developer. QA Lead only."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-2 | GET developer notifications after re-open → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "",
+                      "pm.test(\"FR-2: returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: lists only dev_alex's own notifications\", () => {",
+                      "  pm.expect(res.success).to.eql(true);",
+                      "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"dev_alex\"));",
+                      "});",
+                      "",
+                      "const bugId = Number(pm.environment.get(\"bugId\"));",
+                      "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"re-opened by qa_lead\"));",
+                      "",
+                      "pm.test(\"FR-2: has the 're-opened by qa_lead' notification for BUG-\" + bugId, () => {",
+                      "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                      "  pm.expect(match.read).to.eql(false);",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{devToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                },
+                "description": "After the re-open, the assigned developer dev_alex has an unread 're-opened by qa_lead' notification."
+              },
+              "response": []
+            },
+            {
+              "name": "NFR-2 | POST writes until rate limited → 429",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const n = Number(pm.variables.get(\"rlCount\") || 0) + 1;",
+                      "pm.variables.set(\"rlCount\", n);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const n = Number(pm.variables.get(\"rlCount\"));",
+                      "const instances = Number(pm.environment.get(\"instances\") || 1);",
+                      "const max = 60 * instances + 5;",
+                      "",
+                      "if (pm.response.code === 401) {",
+                      "  // Under the limit: auth rejected it, so the limiter let it through.",
+                      "  pm.test(\"NFR-2: write #\" + n + \" is under the limit (401 from auth, not 429)\", () => {",
+                      "    pm.response.to.have.status(401);",
+                      "  });",
+                      "  if (n === 1) {",
+                      "    pm.test(\"NFR-2: policy header says 60 per minute\", () => {",
+                      "      pm.expect(pm.response.headers.get(\"RateLimit-Policy\")).to.include(\"60-in-1min\");",
+                      "    });",
+                      "  }",
+                      "  if (n < max) pm.execution.setNextRequest(pm.info.requestName);",
+                      "  else pm.test(\"NFR-2: limit reached within \" + max + \" writes\", () => pm.expect.fail(\"no 429 after \" + n + \" writes\"));",
+                      "} else {",
+                      "  pm.variables.set(\"rlCount\", 0);",
+                      "  pm.test(\"NFR-2: write #\" + n + \" in this burst returns 429\", () => {",
+                      "    pm.response.to.have.status(429);",
+                      "  });",
+                      "  pm.test(\"NFR-2: 429 body uses the agreed message\", () => {",
+                      "    pm.expect(pm.response.json()).to.eql({ success: false, errors: [\"Too many requests, please try again in a minute.\"] });",
+                      "  });",
+                      "  pm.test(\"NFR-2: no more than 60 writes per instance were allowed\", () => {",
+                      "    pm.expect(n - 1).to.be.at.most(60 * instances);",
+                      "  });",
+                      "  ",
+                      "  pm.test(\"NFR-2: Content-Type is present\", () => {",
+                      "    pm.response.to.have.header(\"Content-Type\");",
+                      "  });",
+                      "  ",
+                      "  pm.test(\"NFR-2: responds within 1000 ms\", () => {",
+                      "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                },
+                "description": "Rate limit (NFR-2): POST, PATCH and PUT under /api are limited to 60 per minute per client IP. This request repeats itself (no auth, so each write is rejected with 401 but still counted) until the 429 arrives with \"Too many requests, please try again in a minute.\". Earlier writes in the run count toward the 60. Set instances = 2 when running through the ALB, because each instance counts separately. Run this last and wait a minute before the next run."
+              },
+              "response": [
+                {
+                  "name": "429: write limit reached",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/bugs",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "bugs"
+                      ]
+                    }
+                  },
+                  "status": "Too Many Requests",
+                  "code": 429,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Too many requests, please try again in a minute.\"\n  ]\n}"
+                },
+                {
+                  "name": "401: under the limit (reached auth)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/bugs",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "bugs"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Authentication required.\"\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "NFR-2 | GET bugs after the write limit → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"NFR-2: GET /api/bugs still returns 200\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"NFR-2: Content-Type is present\", () => {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"NFR-2: responds within 1000 ms\", () => {",
+                      "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                },
+                "description": "Reads are not rate limited: GET /api/bugs still works right after the write limit is reached."
+              },
+              "response": []
+            }
+          ],
+          "description": "Notifications (FR-2, Jira BTS2-8 / BTS2-33) and the write rate limit (NFR-2, Jira BTS2-9 / BTS2-37). Owner: Syed. Run after 00 Auth."
+        },
+        {
+          "name": "FR-2 | POST create bug for the notification check (Tester) → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: bug created (201)\", () => {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.environment.set(\"bugId\", res.bug.id);",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman notifications check\",\n  \"module\": \"Notifications\",\n  \"severity\": \"Medium\",\n  \"priority\": \"Medium\",\n  \"description\": \"Created by the 03 Notifications Postman folder to check notification recipients.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs"
+              ]
+            },
+            "description": "Setup: tester_sarah reports a fresh bug and saves its id to bugId, so the steps below can check who is notified. Tester or QA Lead only."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH claim bug (Developer) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: claim returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/claim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "claim"
+              ]
+            },
+            "description": "dev_alex claims the bug (Open → In Progress). Under FR-2 this must notify the reporter. Developer only."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET my notifications after claim (Tester) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only tester_sarah's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"tester_sarah\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"claimed by dev_alex\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 'claimed by dev_alex' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "if (match) pm.environment.set(\"notificationId\", match._id);",
+                  "",
+                  "pm.test(\"FR-2: unread count is returned\", () => {",
+                  "  pm.expect(res.unread).to.be.a(\"number\").and.to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "Lists the logged-in user's own notifications (newest 50, with an unread count). After the claim, the reporter tester_sarah has an unread 'claimed by dev_alex' notification; its id is saved to notificationId. Any logged-in role."
+          },
+          "response": [
+            {
+              "name": "200 OK: own notifications with unread count",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"count\": 1,\n  \"unread\": 1,\n  \"notifications\": [\n    {\n      \"_id\": \"6ad2be22153101de785bda6c\",\n      \"recipient\": \"tester_sarah\",\n      \"bugId\": 101,\n      \"eventType\": \"bug.claimed\",\n      \"message\": \"BUG-101 was claimed by dev_alex.\",\n      \"read\": false,\n      \"timestamp\": \"2026-10-17T00:15:30.376Z\",\n      \"__v\": 0\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "FR-2 | GET notifications without token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 401\", () => {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Authentication required.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "Error case: listing notifications without logging in is rejected. No auth."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH mark own notification read (Tester) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: notification is now read\", () => {",
+                  "  pm.expect(res.notification.read).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "tester_sarah marks her own claim notification as read. Any logged-in role, own notifications only."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH someone else's notification (Developer) → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 404\", () => {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "Error case: dev_alex tries to mark tester_sarah's notification. It gets the same 404 as an unknown id, so users can't probe which ids exist."
+          },
+          "response": [
+            {
+              "name": "404: someone else's notification",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "{{notificationId}}",
+                    "read"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Notification not found.\"\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "FR-2 | PATCH unknown notification → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 404\", () => {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/670a000100000000000000ff/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "670a000100000000000000ff",
+                "read"
+              ]
+            },
+            "description": "Error case: a well-formed id that does not exist."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH malformed notification id → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 404\", () => {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Notification not found.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/not-an-id/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "not-an-id",
+                "read"
+              ]
+            },
+            "description": "Error case: an id that is not a valid MongoDB ObjectId returns 404 without querying the database."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH mark read without token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: returns 401\", () => {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: error message returned\", () => {",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.eql(false);",
+                  "  pm.expect(res.errors).to.include(\"Authentication required.\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "Error case: marking a notification read without logging in. No auth."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH resolve bug (Developer) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: resolve returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolutionType\": \"Code Fix\",\n  \"resolutionNotes\": \"Fixed during the Postman notifications check.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "resolve"
+              ]
+            },
+            "description": "dev_alex resolves the bug (In Progress → Resolved). Under FR-2 this must notify the reporter and all QA Leads. Developer only."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET QA Lead notifications after resolve → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only qa_lead's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"qa_lead\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"resolved by dev_alex\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 'resolved by dev_alex' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "After the resolve, qa_lead has an unread 'resolved by dev_alex' notification."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET reporter notifications after resolve → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only tester_sarah's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"tester_sarah\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"resolved by dev_alex\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 'resolved by dev_alex' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{testerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "After the resolve, the reporter tester_sarah also has an unread 'resolved by dev_alex' notification."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | PATCH re-open bug (QA Lead) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"FR-2: re-open returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{qaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"reopen\",\n  \"qaNotes\": \"Still fails in the Postman check.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs/{{bugId}}/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs",
+                "{{bugId}}",
+                "verify"
+              ]
+            },
+            "description": "qa_lead re-opens the bug (Resolved → Re-opened). Under FR-2 this must notify the assigned developer. QA Lead only."
+          },
+          "response": []
+        },
+        {
+          "name": "FR-2 | GET developer notifications after re-open → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test(\"FR-2: returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: lists only dev_alex's own notifications\", () => {",
+                  "  pm.expect(res.success).to.eql(true);",
+                  "  res.notifications.forEach(n => pm.expect(n.recipient).to.eql(\"dev_alex\"));",
+                  "});",
+                  "",
+                  "const bugId = Number(pm.environment.get(\"bugId\"));",
+                  "const match = res.notifications.find(n => n.bugId === bugId && n.message.includes(\"re-opened by qa_lead\"));",
+                  "",
+                  "pm.test(\"FR-2: has the 're-opened by qa_lead' notification for BUG-\" + bugId, () => {",
+                  "  pm.expect(match, JSON.stringify(res.notifications.map(n => n.message))).to.exist;",
+                  "  pm.expect(match.read).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"FR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "After the re-open, the assigned developer dev_alex has an unread 're-opened by qa_lead' notification."
+          },
+          "response": []
+        },
+        {
+          "name": "NFR-2 | POST writes until rate limited → 429",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const n = Number(pm.variables.get(\"rlCount\") || 0) + 1;",
+                  "pm.variables.set(\"rlCount\", n);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const n = Number(pm.variables.get(\"rlCount\"));",
+                  "const instances = Number(pm.environment.get(\"instances\") || 1);",
+                  "const max = 60 * instances + 5;",
+                  "",
+                  "if (pm.response.code === 401) {",
+                  "  // Under the limit: auth rejected it, so the limiter let it through.",
+                  "  pm.test(\"NFR-2: write #\" + n + \" is under the limit (401 from auth, not 429)\", () => {",
+                  "    pm.response.to.have.status(401);",
+                  "  });",
+                  "  if (n === 1) {",
+                  "    pm.test(\"NFR-2: policy header says 60 per minute\", () => {",
+                  "      pm.expect(pm.response.headers.get(\"RateLimit-Policy\")).to.include(\"60-in-1min\");",
+                  "    });",
+                  "  }",
+                  "  if (n < max) pm.execution.setNextRequest(pm.info.requestName);",
+                  "  else pm.test(\"NFR-2: limit reached within \" + max + \" writes\", () => pm.expect.fail(\"no 429 after \" + n + \" writes\"));",
+                  "} else {",
+                  "  pm.variables.set(\"rlCount\", 0);",
+                  "  pm.test(\"NFR-2: write #\" + n + \" in this burst returns 429\", () => {",
+                  "    pm.response.to.have.status(429);",
+                  "  });",
+                  "  pm.test(\"NFR-2: 429 body uses the agreed message\", () => {",
+                  "    pm.expect(pm.response.json()).to.eql({ success: false, errors: [\"Too many requests, please try again in a minute.\"] });",
+                  "  });",
+                  "  pm.test(\"NFR-2: no more than 60 writes per instance were allowed\", () => {",
+                  "    pm.expect(n - 1).to.be.at.most(60 * instances);",
+                  "  });",
+                  "  ",
+                  "  pm.test(\"NFR-2: Content-Type is present\", () => {",
+                  "    pm.response.to.have.header(\"Content-Type\");",
+                  "  });",
+                  "  ",
+                  "  pm.test(\"NFR-2: responds within 1000 ms\", () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs"
+              ]
+            },
+            "description": "Rate limit (NFR-2): POST, PATCH and PUT under /api are limited to 60 per minute per client IP. This request repeats itself (no auth, so each write is rejected with 401 but still counted) until the 429 arrives with \"Too many requests, please try again in a minute.\". Earlier writes in the run count toward the 60. Set instances = 2 when running through the ALB, because each instance counts separately. Run this last and wait a minute before the next run."
+          },
+          "response": [
+            {
+              "name": "429: write limit reached",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Too many requests, please try again in a minute.\"\n  ]\n}"
+            },
+            {
+              "name": "401: under the limit (reached auth)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/bugs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bugs"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"errors\": [\n    \"Authentication required.\"\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "NFR-2 | GET bugs after the write limit → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"NFR-2: GET /api/bugs still returns 200\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"NFR-2: Content-Type is present\", () => {",
+                  "  pm.response.to.have.header(\"Content-Type\");",
+                  "});",
+                  "",
+                  "pm.test(\"NFR-2: responds within 1000 ms\", () => {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bugs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bugs"
+              ]
+            },
+            "description": "Reads are not rate limited: GET /api/bugs still works right after the write limit is reached."
+          },
+          "response": []
+        }
+      ],
+      "description": "Notifications (FR-2) and the write rate limit (NFR-2). A fresh bug is reported, claimed, resolved and re-opened, checking who is notified at each step: claim → the reporter; resolve → the reporter and QA Leads; re-open → the assigned developer. Also covers listing your own notifications (200), marking one read (200), someone else's, unknown or malformed IDs (404), and no token (401). The last request sends writes until the limit answers 429 (\"Too many requests, please try again in a minute.\"), then checks reads still work. Set instances to 2 when running through the ALB, because each instance counts its own 60 per minute."
+    },
+    {
+      "name": "04 Reports FR-3/NFR-3 (Avinandan)",
+      "item": [
+        {
+          "name": "Export",
+          "item": [
+            {
+              "name": "FR-3 AC2: QA Lead exports CSV",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const HEADER = 'ticketId,title,module,severity,priority,status,reporter,assignee,'",
+                      "  + 'resolutionType,resolutionNotes,qaNotes,createdAt,updatedAt,resolvedAt';",
+                      "",
+                      "pm.test('status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type contains text/csv', function () {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv');",
+                      "});",
+                      "",
+                      "pm.test('Content-Disposition is an attachment with a filename', function () {",
+                      "  const disposition = pm.response.headers.get('Content-Disposition');",
+                      "  pm.expect(disposition).to.include('attachment');",
+                      "  pm.expect(disposition).to.match(/filename=\"bugs-report-\\d{4}-\\d{2}-\\d{2}\\.csv\"/);",
+                      "});",
+                      "",
+                      "pm.test('first line is the header row', function () {",
+                      "  pm.expect(pm.response.text().split(/\\r?\\n/)[0]).to.equal(HEADER);",
+                      "});",
+                      "",
+                      "pm.test('body has no _id', function () {",
+                      "  pm.expect(pm.response.text()).to.not.include('_id');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{qaToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/export?format=csv",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "csv"
+                    }
+                  ]
+                },
+                "description": "QA Lead downloads the bug report as a CSV file."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC3: QA Lead exports JSON",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type is JSON', function () {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                      "});",
+                      "",
+                      "pm.test('Content-Disposition is an attachment with a .json filename', function () {",
+                      "  const disposition = pm.response.headers.get('Content-Disposition');",
+                      "  pm.expect(disposition).to.include('attachment');",
+                      "  pm.expect(disposition).to.match(/filename=\"bugs-report-\\d{4}-\\d{2}-\\d{2}\\.json\"/);",
+                      "});",
+                      "",
+                      "pm.test('body parses to an array', function () {",
+                      "  pm.expect(JSON.parse(pm.response.text())).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{qaToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/export?format=json",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "json"
+                    }
+                  ]
+                },
+                "description": "QA Lead downloads the bug report as JSON."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC6 (401): no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 401', function () {",
+                      "  pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('success is false', function () {",
+                      "  pm.expect(pm.response.json().success).to.equal(false);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/export?format=csv",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "csv"
+                    }
+                  ]
+                },
+                "description": "Without a login token the request is refused with 401."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC6 (403): Developer token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 403', function () {",
+                      "  pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('success is false', function () {",
+                      "  pm.expect(pm.response.json().success).to.equal(false);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{devToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/export?format=csv",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "csv"
+                    }
+                  ]
+                },
+                "description": "A Developer is refused with 403. Only the QA Lead can access reports."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC6 (403): Tester token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('status is 403', function () {",
+                      "  pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('success is false', function () {",
+                      "  pm.expect(pm.response.json().success).to.equal(false);",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/export?format=csv",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "csv"
+                    }
+                  ]
+                },
+                "description": "A Tester is refused with 403. Only the QA Lead can access reports."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC4 (400): unsupported format",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 400', function () {",
+                      "  pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('success is false', function () {",
+                      "  pm.expect(pm.response.json().success).to.equal(false);",
+                      "});",
+                      "",
+                      "pm.test('error message lists the supported formats', function () {",
+                      "  const message = pm.response.json().errors[0];",
+                      "  pm.expect(message).to.include('xml');",
+                      "  pm.expect(message).to.include('csv');",
+                      "  pm.expect(message).to.include('json');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{qaToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/export?format=xml",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "xml"
+                    }
+                  ]
+                },
+                "description": "An unsupported format (xml) is rejected with 400."
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC4 (400): missing format",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 400', function () {",
+                      "  pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test('success is false and the message says the format is required', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.success).to.equal(false);",
+                      "  pm.expect(body.errors[0]).to.include('format is required');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{qaToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/export",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "export"
+                  ]
+                },
+                "description": "A missing format parameter is rejected with 400."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Summary",
+          "item": [
+            {
+              "name": "FR-3 AC1: QA Lead gets the summary",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 200 and success is true', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "  pm.expect(pm.response.json().success).to.equal(true);",
+                      "});",
+                      "",
+                      "pm.test('total and mttrSampleSize are numbers', function () {",
+                      "  const summary = pm.response.json().summary;",
+                      "  pm.expect(summary.total).to.be.a('number');",
+                      "  pm.expect(summary.mttrSampleSize).to.be.a('number');",
+                      "});",
+                      "",
+                      "pm.test('countsByStatus has all five statuses, each a number', function () {",
+                      "  const counts = pm.response.json().summary.countsByStatus;",
+                      "  pm.expect(Object.keys(counts)).to.have.members(['Open', 'In Progress', 'Resolved', 'Closed', 'Re-opened']);",
+                      "  Object.values(counts).forEach(function (n) { pm.expect(n).to.be.a('number'); });",
+                      "});",
+                      "",
+                      "pm.test('countsBySeverity has all four severities, each a number', function () {",
+                      "  const counts = pm.response.json().summary.countsBySeverity;",
+                      "  pm.expect(Object.keys(counts)).to.have.members(['Low', 'Medium', 'High', 'Critical']);",
+                      "  Object.values(counts).forEach(function (n) { pm.expect(n).to.be.a('number'); });",
+                      "});",
+                      "",
+                      "pm.test('mttrHours is a number or null', function () {",
+                      "  const hours = pm.response.json().summary.mttrHours;",
+                      "  pm.expect(hours === null || typeof hours === 'number').to.equal(true);",
+                      "});",
+                      "",
+                      "pm.test('total equals the sum of the status counts', function () {",
+                      "  const summary = pm.response.json().summary;",
+                      "  const sum = Object.values(summary.countsByStatus).reduce(function (a, b) { return a + b; }, 0);",
+                      "  pm.expect(sum).to.equal(summary.total);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{qaToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/summary",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "summary"
+                  ]
+                },
+                "description": "Lead views the report summary (counts by status and severity, MTTR)."
+              },
+              "response": [
+                {
+                  "name": "200 Summary returned",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/reports/summary",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "reports",
+                        "summary"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "X-Powered-By",
+                      "value": "Express"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Origin",
+                      "value": "*"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "55"
+                    },
+                    {
+                      "key": "ETag",
+                      "value": "W/\"37-yqDRc1ve8UJ7p+y5YvSgHj89qGg\""
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Sat, 17 Oct 2026 08:39:44 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "keep-alive"
+                    },
+                    {
+                      "key": "Keep-Alive",
+                      "value": "timeout=5"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": false,\n    \"errors\": [\n        \"Authentication required.\"\n    ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "FR-3 AC6 (401): summary with no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 401', function () {",
+                      "  pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('success is false', function () {",
+                      "  pm.expect(pm.response.json().success).to.equal(false);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/summary",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "summary"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC6 (403): summary with Developer token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 403', function () {",
+                      "  pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('success is false', function () {",
+                      "  pm.expect(pm.response.json().success).to.equal(false);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{devToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/summary",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "summary"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FR-3 AC6 (403): summary with Tester token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 403', function () {",
+                      "  pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('success is false', function () {",
+                      "  pm.expect(pm.response.json().success).to.equal(false);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{testerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reports/summary",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "summary"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "403 Tester refused",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/reports/summary",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "reports",
+                        "summary"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "X-Powered-By",
+                      "value": "Express"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Origin",
+                      "value": "*"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "55"
+                    },
+                    {
+                      "key": "ETag",
+                      "value": "W/\"37-yqDRc1ve8UJ7p+y5YvSgHj89qGg\""
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Sat, 17 Oct 2026 08:41:05 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "keep-alive"
+                    },
+                    {
+                      "key": "Keep-Alive",
+                      "value": "timeout=5"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": false,\n    \"errors\": [\n        \"Authentication required.\"\n    ]\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "QA Lead reports (FR-3). GET /api/reports/summary returns totals, counts by status and severity, and MTTR (200 as QA Lead, 403 as Tester, 401 without a token). GET /api/reports/export?format=csv|json downloads every bug as CSV (text/csv) or JSON (200); an unsupported format such as xml returns 400."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "auth_secret_0gy4",
+      "secret": true,
+      "source": {
+        "provider": "postman",
+        "postman": {
+          "type": "cloud",
+          "secretId": "cdecb4ae-aa64-4314-951d-ddf5e4b97ad5",
+          "vaultId": "e00a1e21-2eb4-4fe2-9b7c-6a9beb2898d2"
+        }
+      }
+    }
+  ]
+}
