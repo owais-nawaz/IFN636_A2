@@ -146,7 +146,7 @@ Use the **Quick Demo Login** buttons on the sign-in screen, or register a new ac
 
 ```bash
 cd backend
-npm test             # 230 tests
+npm test             # 250 tests
 npm run test:report  # also writes an HTML report to backend/test-report/index.html (not committed)
 ```
 
@@ -161,11 +161,11 @@ Conventions for new tests:
 
 ### API tests (black-box)
 
-Postman collections and environments are in `backend/postman/`, one collection per feature (for example `03 Notifications FR-2/NFR-2`), merged into the team's master collection in the shared workspace. Set `baseUrl` in the environment you select (local, EC2 or ALB). Requests check status codes and response bodies, including error cases such as 401, 403, 404, 409 and 429. Run them from the Postman app or with Newman:
+Postman collections and environments are in `backend/postman/`. `master.postman_collection.json` holds every folder (`00 Auth`, `01 Workflow`, `02 Audit`, `03 Notifications`, `04 Reports`), with the `Local`, `EC2` and `ALB` environments; each member's original hand-over collection is kept next to it. Set `baseUrl` in the environment you select (the EC2 one is a placeholder: use an instance's public IP on port 3000). Requests check status codes and response bodies, including error cases such as 401, 403, 404, 409 and 429. Run them from the Postman app or with Newman:
 
 ```bash
-npx newman run backend/postman/03-notifications.postman_collection.json \
-  -e backend/postman/03-notifications-local.postman_environment.json
+npx newman run backend/postman/master.postman_collection.json \
+  -e backend/postman/Local.postman_environment.json
 ```
 
 Wait a minute between runs, because the rate-limit test uses up the write quota.
@@ -173,19 +173,19 @@ Wait a minute between runs, because the rate-limit test uses up the write quota.
 ## CI/CD
 
 - **CI** (`.github/workflows/ci.yml`): on every pull request and push to `main`, installs the backend on Node 20 and runs `npm test`. `main` is protected: changes reach it only through reviewed pull requests.
-- **CD** (`.github/workflows/cd.yml`): after CI passes on `main`, connects to the EC2 instances over SSH, pulls the commit that passed CI, builds the frontend, installs backend production dependencies and restarts the pm2 processes. It reads `EC2_HOST` (one or more hosts, comma-separated), `EC2_USER`, `EC2_APP_DIR`, `EC2_SSH_KEY` and optionally `EC2_KNOWN_HOSTS` from repository secrets.
+- **CD** (`.github/workflows/cd.yml`): after CI passes on `main`, connects to the EC2 instances over SSH, pulls the commit that passed CI, builds the frontend, installs backend production dependencies and restarts the pm2 processes. It deploys NodeA first, then NodeB, and reads these repository secrets: `EC2_HOST`, `EC2_SSH_KEY` and optionally `EC2_KNOWN_HOSTS` for NodeA; `EC2B_HOST`, `EC2B_SSH_KEY` and optionally `EC2B_KNOWN_HOSTS` for NodeB (skipped if `EC2B_HOST` is not set); and `EC2_USER` and `EC2_APP_DIR` for both.
 
-On each instance, pm2 runs the backend API on port 3000 and the frontend on port 5001. Don't set `NODE_ENV=test` on a server, because that turns the rate limiter off.
+On each instance, pm2 runs the backend on port 3000, which serves both the API and the built frontend (`frontend/dist`). Port 5001 is the Vite development server and is not used in production. Don't set `NODE_ENV=test` on a server, because that turns the rate limiter off.
 
 ## Load Balancing
 
-The ALB sends traffic to both instances and uses `GET /api/health` as its health check. To see traffic alternate between instances:
+The ALB listens on HTTP port 80 and forwards to a target group with both instances on **port 3000**, using `GET /api/health` as its health check. The instance security group allows port 3000 from the ALB's security group. To see traffic alternate between instances:
 
 ```bash
 for i in $(seq 1 6); do curl -s http://<ALB DNS name>/api/health; echo; done
 ```
 
-Each response names the instance that served it (`INSTANCE_NAME` in that server's `.env`, e.g. `EC2-NodeA`). Load tests use Apache Benchmark (`ab`); results are in the report.
+Each response names the instance that served it, in the body and in the `X-Served-By` header: `INSTANCE_NAME` from that server's `.env` (e.g. `EC2-NodeA`), or the server's hostname if it is not set. Load tests use Apache Benchmark (`ab`); results are in the report.
 
 ## Security
 
