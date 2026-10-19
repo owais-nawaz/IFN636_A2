@@ -2,6 +2,7 @@
 // events BugService emits (contract on BTS2-48), and the notifications API.
 const { expect } = require('chai');
 const sinon = require('sinon');
+const nodemailer = require('nodemailer');
 
 const Bug = require('../src/models/Bug');
 const User = require('../src/models/User');
@@ -156,16 +157,70 @@ describe('Notifications (FR-2)', () => {
   });
 
   describe('EmailNotifier', () => {
-    it('FR-2: logs a simulated email to each recipient instead of sending it', async () => {
+    const users = [
+      { username: 'tester_sarah', email: 'sarah@qut.edu.au' },
+      { username: 'qa_lead', email: 'qa@qut.edu.au' },
+    ];
+
+    it('FR-2: without Gmail settings, logs the email instead of sending it', async () => {
       sinon.stub(Bug, 'findOne').resolves(bug);
-      const userStub = sinon.stub(User, 'find').resolves([{ username: 'tester_sarah', email: 'sarah@qut.edu.au' }]);
+      const userStub = sinon.stub(User, 'find').resolves([users[0]]);
+      const createStub = sinon.stub(nodemailer, 'createTransport');
       const logStub = sinon.stub(console, 'log');
 
       await new EmailNotifier().notify(event(EVENT_TYPES.CLAIMED));
 
       expect(userStub.calledWith({ username: { $in: ['tester_sarah'] } })).to.be.true;
+      expect(createStub.called).to.be.false;
       expect(logStub.calledOnce).to.be.true;
       expect(logStub.firstCall.args[0]).to.include('To: sarah@qut.edu.au').and.include('BUG-101 was claimed by dev_alex.');
+    });
+
+    it('FR-2: sends one email per recipient through the mail transport', async () => {
+      sinon.stub(User, 'find').resolves(users);
+      sinon.stub(console, 'log');
+      const transport = { sendMail: sinon.stub().resolves({}) };
+
+      await new EmailNotifier({ transport }).send(['tester_sarah', 'qa_lead'], event(EVENT_TYPES.RESOLVED), 'BUG-101 was resolved.');
+
+      expect(transport.sendMail.callCount).to.equal(2);
+      const mail = transport.sendMail.firstCall.args[0];
+      expect(mail.to).to.equal('sarah@qut.edu.au');
+      expect(mail.subject).to.equal('BUG-101 update');
+      expect(mail.text).to.include('BUG-101 was resolved.');
+      expect(transport.sendMail.secondCall.args[0].to).to.equal('qa@qut.edu.au');
+    });
+
+    it('FR-2: a failed address is logged and does not stop the other emails', async () => {
+      sinon.stub(User, 'find').resolves(users);
+      sinon.stub(console, 'log');
+      const errorStub = sinon.stub(console, 'error');
+      const transport = { sendMail: sinon.stub() };
+      transport.sendMail.onFirstCall().rejects(new Error('Invalid recipient'));
+      transport.sendMail.onSecondCall().resolves({});
+
+      await new EmailNotifier({ transport }).send(['tester_sarah', 'qa_lead'], event(EVENT_TYPES.RESOLVED), 'BUG-101 was resolved.');
+
+      expect(transport.sendMail.callCount).to.equal(2);
+      expect(errorStub.calledOnce).to.be.true;
+      expect(errorStub.firstCall.args[0]).to.include('sarah@qut.edu.au');
+    });
+
+    it('FR-2: with Gmail settings, creates one Gmail transport and reuses it', async () => {
+      sinon.stub(process, 'env').value({ ...process.env, GMAIL_USER: 'bts@gmail.com', GMAIL_APP_PASSWORD: 'app-password' });
+      sinon.stub(User, 'find').resolves([users[0]]);
+      sinon.stub(console, 'log');
+      const transport = { sendMail: sinon.stub().resolves({}) };
+      const createStub = sinon.stub(nodemailer, 'createTransport').returns(transport);
+      const notifier = new EmailNotifier();
+
+      await notifier.send(['tester_sarah'], event(EVENT_TYPES.CLAIMED), 'one');
+      await notifier.send(['tester_sarah'], event(EVENT_TYPES.CLAIMED), 'two');
+
+      expect(createStub.calledOnce).to.be.true;
+      expect(createStub.firstCall.args[0]).to.deep.equal({ service: 'gmail', auth: { user: 'bts@gmail.com', pass: 'app-password' } });
+      expect(transport.sendMail.firstCall.args[0].from).to.include('bts@gmail.com');
+      expect(transport.sendMail.callCount).to.equal(2);
     });
   });
 
