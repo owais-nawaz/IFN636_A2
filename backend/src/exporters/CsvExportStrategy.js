@@ -30,3 +30,4 @@ class CsvExportStrategy extends ReportExporter {
 }
 
 module.exports = CsvExportStrategy;
+module.exports.formatCell = formatCell;
