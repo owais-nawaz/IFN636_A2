@@ -27,21 +27,40 @@ jobs:
     steps:
       - name: Configure SSH
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+          SSH_PRIVATE_KEY_A: ${{ secrets.EC2_SSH_KEY }}
+          KNOWN_HOSTS_A: ${{ secrets.EC2_KNOWN_HOSTS }}
+          SSH_PRIVATE_KEY_B: ${{ secrets.EC2B_SSH_KEY }}
+          KNOWN_HOSTS_B: ${{ secrets.EC2B_KNOWN_HOSTS }}
         run: |
           set -eu
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          if [ -n "$KNOWN_HOSTS" ]; then
-            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          # Configure key and known hosts for Instance A
+          if [ -n "$SSH_PRIVATE_KEY_A" ]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY_A" > ~/.ssh/deploy_key_a
+            chmod 600 ~/.ssh/deploy_key_a
+          fi
+          if [ -n "$KNOWN_HOSTS_A" ]; then
+            printf '%s\n' "$KNOWN_HOSTS_A" >> ~/.ssh/known_hosts
+          fi
+
+          # Configure key and known hosts for Instance B
+          if [ -n "$SSH_PRIVATE_KEY_B" ]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY_B" > ~/.ssh/deploy_key_b
+            chmod 600 ~/.ssh/deploy_key_b
+          fi
+          if [ -n "$KNOWN_HOSTS_B" ]; then
+            printf '%s\n' "$KNOWN_HOSTS_B" >> ~/.ssh/known_hosts
+          fi
+
+          if [ -f ~/.ssh/known_hosts ]; then
             chmod 600 ~/.ssh/known_hosts
           fi
 
       - name: Deploy to EC2
         env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2A_HOST: ${{ secrets.EC2_HOST }}
+          EC2B_HOST: ${{ secrets.EC2B_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
           APP_DIR: ${{ secrets.EC2_APP_DIR }}
           DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -53,11 +72,27 @@ jobs:
             STRICT_HOST_OPTION="StrictHostKeyChecking=accept-new"
           fi
 
-          # Support deploying to single host or multiple space/comma-separated hosts (e.g. NodeA and NodeB behind ALB)
-          for HOST in $(echo "$EC2_HOST" | tr ',' ' '); do
-            echo "===> Deploying to $HOST..."
+          deploy_node() {
+            local NODE_NAME="$1"
+            local HOST="$2"
+            local KEY_FILE="$3"
+
+            if [ -z "$HOST" ]; then
+              echo "=== Skipping $NODE_NAME: host address not provided ==="
+              return 0
+            fi
+
+            if [ ! -f "$KEY_FILE" ]; then
+              echo "=== Error: SSH key $KEY_FILE for $NODE_NAME is missing ==="
+              exit 1
+            fi
+
+            echo "=========================================================="
+            echo " Deploying to $NODE_NAME ($HOST)"
+            echo "=========================================================="
+
             ssh \
-              -i ~/.ssh/deploy_key \
+              -i "$KEY_FILE" \
               -o BatchMode=yes \
               -o "$STRICT_HOST_OPTION" \
               "$EC2_USER@$HOST" \
@@ -107,4 +142,9 @@ jobs:
 
           pm2 status
           REMOTE
-          done
+            echo "=== Finished deploying to $NODE_NAME ==="
+          }
+
+          # Deploy sequentially for zero-downtime rolling update
+          deploy_node "EC2-NodeA" "$EC2A_HOST" ~/.ssh/deploy_key_a
+          deploy_node "EC2-NodeB" "$EC2B_HOST" ~/.ssh/deploy_key_b
